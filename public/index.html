@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inkraft — AI Blog Article Engine</title>
+  <meta name="description" content="Generate publish-ready, SEO-optimized blog articles with AI. Powered by Gemini." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ── Header ──────────────────────────────────────────────── -->
+  <header id="app-header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">✦</span>
+        <h1>Inkraft</h1>
+      </div>
+      <p class="tagline">AI Blog Article Engine</p>
+    </div>
+  </header>
+
+  <!-- ── Main ────────────────────────────────────────────────── -->
+  <main id="app-main">
+
+    <!-- Input Section -->
+    <section id="input-section" class="glass-card">
+      <form id="generate-form" autocomplete="off">
+        <div class="input-primary">
+          <label for="keyword-input">Enter your keyword or topic</label>
+          <input
+            type="text"
+            id="keyword-input"
+            placeholder="e.g. Best Shopify alternatives, How to start a podcast..."
+            required
+          />
+        </div>
+
+        <button type="button" id="toggle-options" class="toggle-btn">
+          <span class="toggle-icon">›</span>
+          Advanced Options
+        </button>
+
+        <div id="advanced-options" class="options-panel collapsed">
+          <div class="options-grid">
+            <div class="option-field">
+              <label for="audience-input">Target Audience</label>
+              <input type="text" id="audience-input" placeholder="e.g. small business owners" />
+            </div>
+            <div class="option-field">
+              <label for="tone-select">Tone</label>
+              <select id="tone-select">
+                <option value="">Auto (Friendly Expert)</option>
+                <option value="authoritative">Authoritative</option>
+                <option value="beginner-friendly">Beginner-Friendly</option>
+                <option value="edgy/opinionated">Edgy / Opinionated</option>
+                <option value="journalistic">Journalistic</option>
+              </select>
+            </div>
+            <div class="option-field">
+              <label for="type-select">Content Type</label>
+              <select id="type-select">
+                <option value="">Auto-detect</option>
+                <option value="listicle">Listicle</option>
+                <option value="how-to guide">How-To Guide</option>
+                <option value="comparison">Comparison</option>
+                <option value="ultimate guide">Ultimate Guide</option>
+                <option value="review">Review</option>
+                <option value="problem/solution">Problem / Solution</option>
+              </select>
+            </div>
+            <div class="option-field">
+              <label for="wordcount-input">Word Count</label>
+              <input type="text" id="wordcount-input" placeholder="e.g. 3000" />
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" id="generate-btn" class="primary-btn">
+          <span class="btn-icon">⚡</span>
+          Generate Article
+        </button>
+      </form>
+    </section>
+
+    <!-- Loading Overlay -->
+    <section id="loading-section" class="glass-card hidden">
+      <div class="loader-container">
+        <div class="spinner"></div>
+        <p id="loading-status" class="loading-text">Initializing Inkraft engine...</p>
+        <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+      </div>
+    </section>
+
+    <!-- Error Display -->
+    <section id="error-section" class="glass-card hidden">
+      <div class="error-container">
+        <span class="error-icon">⚠</span>
+        <p id="error-message"></p>
+        <button id="error-dismiss" class="secondary-btn">Try Again</button>
+      </div>
+    </section>
+
+    <!-- Output Section -->
+    <section id="output-section" class="hidden">
+      <div class="tabs-header">
+        <nav id="tabs-nav" class="tabs-nav">
+          <button class="tab-btn active" data-tab="seo-brief">SEO Brief</button>
+          <button class="tab-btn" data-tab="outline">Outline</button>
+          <button class="tab-btn" data-tab="article">Full Article</button>
+          <button class="tab-btn" data-tab="seo-meta">SEO Metadata</button>
+          <button class="tab-btn" data-tab="image-prompt">Image Prompt</button>
+        </nav>
+      </div>
+
+      <!-- Tab: SEO Brief -->
+      <div id="tab-seo-brief" class="tab-panel glass-card active">
+        <div class="tab-toolbar">
+          <h2>SEO Intelligence Brief</h2>
+          <button class="copy-btn" data-target="seo-brief-content">Copy All</button>
+        </div>
+        <div id="seo-brief-content" class="tab-content markdown-body"></div>
+      </div>
+
+      <!-- Tab: Outline -->
+      <div id="tab-outline" class="tab-panel glass-card">
+        <div class="tab-toolbar">
+          <h2>Article Outline</h2>
+          <button class="copy-btn" data-target="outline-content">Copy All</button>
+        </div>
+        <div id="outline-content" class="tab-content markdown-body"></div>
+      </div>
+
+      <!-- Tab: Full Article -->
+      <div id="tab-article" class="tab-panel glass-card">
+        <div class="tab-toolbar">
+          <h2>Full Article</h2>
+          <div class="toolbar-right">
+            <span id="word-count-badge" class="word-badge hidden">0 words</span>
+            <button class="copy-btn" data-target="article-content">Copy Article</button>
+          </div>
+        </div>
+        <div id="article-content" class="tab-content markdown-body"></div>
+      </div>
+
+      <!-- Tab: SEO Metadata -->
+      <div id="tab-seo-meta" class="tab-panel glass-card">
+        <div class="tab-toolbar">
+          <h2>SEO Metadata</h2>
+          <button class="copy-btn" data-target="seo-meta-content">Copy All</button>
+        </div>
+        <div id="seo-meta-content" class="tab-content markdown-body"></div>
+      </div>
+
+      <!-- Tab: Image Prompt -->
+      <div id="tab-image-prompt" class="tab-panel glass-card">
+        <div class="tab-toolbar">
+          <h2>Featured Image Prompt</h2>
+          <button class="copy-btn" data-target="image-prompt-content">Copy Prompt</button>
+        </div>
+        <div id="image-prompt-content" class="tab-content markdown-body"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── Footer ──────────────────────────────────────────────── -->
+  <footer id="app-footer">
+    <p>Inkraft v1.0 — Powered by Gemini</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
