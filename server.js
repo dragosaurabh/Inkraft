@@ -44,7 +44,7 @@ function getModel() {
 }
 
 // ── Build the user prompt from form inputs ──────────────────────────
-function buildUserPrompt({ keyword, audience, tone, contentType, wordCount }) {
+function buildUserPrompt({ keyword, audience, tone, contentType, wordCount, imageStyle }) {
   if (!keyword || !keyword.trim()) {
     throw new Error('Keyword is required.');
   }
@@ -61,7 +61,37 @@ function buildUserPrompt({ keyword, audience, tone, contentType, wordCount }) {
     prompt += ' | ' + parts.join(' | ');
   }
 
+  // Append image style directive
+  const style = (imageStyle && imageStyle.trim()) ? imageStyle.trim() : 'photorealistic';
+  prompt += `\n\nimageStyle: ${style}\nGenerate the featured image prompt in ${style.toUpperCase().replace('-', ' ')} style only.`;
+
   return prompt;
+}
+
+// ── SEO Length Validation ───────────────────────────────────────────
+async function fixSeoLengths(model, title, metaDesc, keyword) {
+  if (title.length <= 60 && metaDesc.length <= 160) return { title, metaDesc };
+  
+  const fixPrompt = `Fix these SEO fields to meet exact character limits.
+  
+Current title (${title.length} chars, MUST be 50-60): "${title}"
+Current meta description (${metaDesc.length} chars, MUST be 150-160): "${metaDesc}"
+Primary keyword: ${keyword}
+
+Return ONLY a JSON object, nothing else:
+{"title": "fixed title here", "metaDesc": "fixed meta description here"}
+
+Rules: Title max 60 chars. Meta desc max 160 chars. Keep keyword. Keep it compelling.`;
+
+  try {
+    const result = await model.generateContent(fixPrompt);
+    const text = result.response.text().trim().replace(/^```json\s*|\s*```$/g, '');
+    const json = JSON.parse(text);
+    return { title: json.title, metaDesc: json.metaDesc };
+  } catch (err) {
+    console.error('Failed to fix SEO lengths:', err);
+    return { title, metaDesc }; // Fallback to original
+  }
 }
 
 // ── POST /api/generate — streaming SSE endpoint ─────────────────────
@@ -94,13 +124,39 @@ app.post('/api/generate', async (req, res) => {
       },
     });
 
+    let fullText = '';
     for await (const chunk of result.stream) {
       const text = chunk.text();
       if (text) {
+        fullText += text;
         // Send as SSE data event — encode newlines for SSE protocol
         const encoded = text.replace(/\n/g, '\\n');
         res.write(`data: ${encoded}\n\n`);
       }
+    }
+
+    // Try to fix SEO lengths post-generation
+    try {
+      const seoMatch = fullText.match(/OUTPUT\s+BLOCK\s+4[\s\S]*?(?=OUTPUT\s+BLOCK\s+5|$)/i);
+      if (seoMatch) {
+        const seoText = seoMatch[0];
+        const titleMatch = seoText.match(/\*\*SEO Title\*\*[:\s]*([^\n]*)/i);
+        const descMatch = seoText.match(/\*\*Meta Description\*\*[:\s]*([^\n]*)/i);
+        
+        if (titleMatch && descMatch) {
+          const origTitle = titleMatch[1].trim();
+          const origDesc = descMatch[1].trim();
+          
+          if (origTitle.length > 60 || origDesc.length > 160) {
+            const fixed = await fixSeoLengths(model, origTitle, origDesc, req.body.keyword || 'topic');
+            if (fixed.title !== origTitle || fixed.metaDesc !== origDesc) {
+              res.write(`data: ${JSON.stringify({ type: 'seoFix', title: fixed.title, metaDesc: fixed.metaDesc })}\n\n`);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Error during SEO length post-processing:", e);
     }
 
     // Signal completion

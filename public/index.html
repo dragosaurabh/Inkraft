@@ -63,10 +63,13 @@
           />
         </div>
 
-        <button type="button" id="toggle-options" class="toggle-btn">
-          <span class="toggle-icon">›</span>
-          Advanced Options
-        </button>
+        <div class="toggle-row" style="display:flex; justify-content:space-between; align-items:center; margin-top: 12px;">
+          <button type="button" id="toggle-options" class="toggle-btn" style="margin-top:0;">
+            <span class="toggle-icon">›</span>
+            Advanced Options
+          </button>
+          <a href="#" id="reset-settings" class="reset-settings-link hidden" style="font-size:12px; color:var(--text-muted); text-decoration:underline;">Reset to defaults</a>
+        </div>
 
         <div id="advanced-options" class="options-panel collapsed">
           <div class="options-grid">
@@ -99,8 +102,58 @@
             <div class="option-field">
               <label for="wordcount-input">Word Count</label>
               <input type="text" id="wordcount-input" placeholder="e.g. 3000" />
+              <div id="wordcount-helper" class="wordcount-helper">Auto (Gemini decides — usually 3,000–5,000)</div>
             </div>
           </div>
+
+          <!-- Featured Image Style Picker -->
+          <div class="image-style-section">
+            <label class="image-style-label">FEATURED IMAGE STYLE</label>
+            <p class="image-style-subtitle">Choose the visual style for your blog's featured image</p>
+            <div id="image-style-grid" class="image-style-grid">
+              <button type="button" class="style-card selected" data-style="photorealistic">
+                <span class="style-check">✓</span>
+                <span class="style-icon">📸</span>
+                <span class="style-name">Photorealistic</span>
+                <span class="style-desc">Real & Editorial</span>
+              </button>
+              <button type="button" class="style-card" data-style="flat-illustration">
+                <span class="style-check">✓</span>
+                <span class="style-icon">🎨</span>
+                <span class="style-name">Flat Illustration</span>
+                <span class="style-desc">Clean & Modern</span>
+              </button>
+              <button type="button" class="style-card" data-style="cinematic">
+                <span class="style-check">✓</span>
+                <span class="style-icon">🌆</span>
+                <span class="style-name">Cinematic</span>
+                <span class="style-desc">Bold & Dramatic</span>
+              </button>
+              <button type="button" class="style-card" data-style="corporate-clean">
+                <span class="style-check">✓</span>
+                <span class="style-icon">💼</span>
+                <span class="style-name">Corporate Clean</span>
+                <span class="style-desc">Professional</span>
+              </button>
+              <button type="button" class="style-card" data-style="abstract-art">
+                <span class="style-check">✓</span>
+                <span class="style-icon">🎭</span>
+                <span class="style-name">Abstract Art</span>
+                <span class="style-desc">Creative & Bold</span>
+              </button>
+              <button type="button" class="style-card" data-style="isometric-3d">
+                <span class="style-check">✓</span>
+                <span class="style-icon">✏️</span>
+                <span class="style-name">Isometric 3D</span>
+                <span class="style-desc">Tech & Modern</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Options Summary (visible when collapsed) -->
+        <div id="options-summary" class="options-summary">
+          Style: Photorealistic · Tone: Auto · Type: Auto-detect
         </div>
 
         <div class="generate-row">
@@ -154,6 +207,14 @@
         <div class="progress-bar progress-bar-mobile"><div id="progress-fill-mobile" class="progress-fill"></div></div>
         <p id="loading-status-mobile" class="loading-status-mobile">Analysing search intent...</p>
         <p class="loading-time-hint">Usually takes 30–60 seconds</p>
+      </div>
+
+      <!-- Skeleton Loading -->
+      <div class="skeleton-loader">
+        <div class="skeleton-line" style="width: 85%"></div>
+        <div class="skeleton-line" style="width: 100%"></div>
+        <div class="skeleton-line" style="width: 70%"></div>
+        <div class="skeleton-line" style="width: 90%"></div>
       </div>
     </section>
 
@@ -213,6 +274,7 @@
             <span id="quality-score-badge" class="quality-badge hidden">Score: 0/100</span>
           </div>
           <div class="toolbar-right toolbar-actions">
+            <button class="copy-btn" data-copy-type="wp-html" data-target="article-content">Copy WordPress HTML</button>
             <button class="copy-btn" data-copy-type="markdown" data-target="article-content">Copy Markdown</button>
             <button class="copy-btn" data-copy-type="clean" data-target="article-content">Copy Clean Text</button>
           </div>
@@ -256,6 +318,8 @@
   <footer id="app-footer">
     <p id="footer-text">Inkraft v1.0 — Powered by Gemini</p>
   </footer>
+
+  <div id="toast-container" class="toast-container"></div>
 
   <script src="app.js"></script>
 </body>
