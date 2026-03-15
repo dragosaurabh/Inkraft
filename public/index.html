@@ -10,26 +10,33 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
+<body data-theme="v1">
+
+  <!-- ── V2 Top Accent Bar ────────────────────────────────────── -->
+  <div class="v2-top-bar"></div>
 
   <!-- ── Header ──────────────────────────────────────────────── -->
-  <header id="app-header">
-    <div class="header-inner">
-      <div class="logo">
-        <span class="logo-icon">✦</span>
-        <h1>Inkraft</h1>
-      </div>
-      <p class="tagline">AI Blog Article Engine</p>
+  <header class="app-header">
+    <div class="header-left"></div>
+    <div class="header-center">
+      <span class="header-logo">✦ Inkraft</span>
+      <span class="header-tagline">AI BLOG ARTICLE ENGINE</span>
     </div>
-    <!-- History toggle -->
-    <button id="history-toggle" class="history-toggle-btn" title="Article History">
-      <span class="history-icon">📚</span>
-      <span class="history-label">History</span>
-    </button>
+    <div class="header-right">
+      <button id="history-toggle" class="history-btn" title="Article History">
+        <span class="history-btn-icon">📋</span>
+        <span class="history-btn-label">History</span>
+      </button>
+      <div class="version-toggle" id="version-toggle">
+        <button class="v-btn active" id="toggle-v1" data-version="v1">V1</button>
+        <button class="v-btn" id="toggle-v2" data-version="v2">V2</button>
+      </div>
+    </div>
   </header>
 
-  <!-- ── History Sidebar ─────────────────────────────────────── -->
+  <!-- ── History Sidebar / Bottom Sheet ──────────────────────── -->
   <aside id="history-sidebar" class="history-sidebar">
+    <div class="history-drag-handle"><span class="drag-bar"></span></div>
     <div class="history-header">
       <h2>Recent Articles</h2>
       <button id="history-close" class="history-close-btn">✕</button>
@@ -106,50 +113,47 @@
       </form>
     </section>
 
+    <!-- Example Chips (shown when no article yet) -->
+    <div id="example-chips" class="example-chips">
+      <button class="chip" data-keyword="Best Shopify alternatives 2026">✦ Best Shopify alternatives</button>
+      <button class="chip" data-keyword="How to start a podcast in 2026">✦ How to start a podcast</button>
+      <button class="chip" data-keyword="Best free SEO tools 2026">✦ Best free SEO tools 2026</button>
+    </div>
+
     <!-- Loading Overlay -->
     <section id="loading-section" class="glass-card hidden">
-      <div class="loader-container">
+      <!-- Desktop: multi-step -->
+      <div class="loader-container loader-desktop">
         <div class="loader-steps" id="loader-steps">
           <div class="loader-step active" data-step="1">
-            <div class="step-indicator">
-              <div class="step-dot"></div>
-              <span class="step-number">1</span>
-            </div>
+            <div class="step-indicator"><div class="step-dot"></div><span class="step-number">1</span></div>
             <span class="step-label">Analysing search intent...</span>
           </div>
           <div class="loader-step" data-step="2">
-            <div class="step-indicator">
-              <div class="step-dot"></div>
-              <span class="step-number">2</span>
-            </div>
+            <div class="step-indicator"><div class="step-dot"></div><span class="step-number">2</span></div>
             <span class="step-label">Mapping semantic entities...</span>
           </div>
           <div class="loader-step" data-step="3">
-            <div class="step-indicator">
-              <div class="step-dot"></div>
-              <span class="step-number">3</span>
-            </div>
+            <div class="step-indicator"><div class="step-dot"></div><span class="step-number">3</span></div>
             <span class="step-label">Building article outline...</span>
           </div>
           <div class="loader-step" data-step="4">
-            <div class="step-indicator">
-              <div class="step-dot"></div>
-              <span class="step-number">4</span>
-            </div>
+            <div class="step-indicator"><div class="step-dot"></div><span class="step-number">4</span></div>
             <span class="step-label">Writing full article...</span>
           </div>
           <div class="loader-step" data-step="5">
-            <div class="step-indicator">
-              <div class="step-dot"></div>
-              <span class="step-number">5</span>
-            </div>
+            <div class="step-indicator"><div class="step-dot"></div><span class="step-number">5</span></div>
             <span class="step-label">Generating SEO package & image prompt...</span>
           </div>
         </div>
-        <div class="progress-bar">
-          <div id="progress-fill" class="progress-fill"></div>
-        </div>
+        <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
         <p id="loading-percent" class="loading-percent">0%</p>
+      </div>
+      <!-- Mobile: simplified -->
+      <div class="loader-container loader-mobile">
+        <div class="progress-bar progress-bar-mobile"><div id="progress-fill-mobile" class="progress-fill"></div></div>
+        <p id="loading-status-mobile" class="loading-status-mobile">Analysing search intent...</p>
+        <p class="loading-time-hint">Usually takes 30–60 seconds</p>
       </div>
     </section>
 
@@ -159,10 +163,7 @@
         <span class="error-icon">⚠</span>
         <p id="error-message"></p>
         <div class="error-actions">
-          <button id="error-retry" class="primary-btn retry-btn">
-            <span class="btn-icon">↻</span>
-            <span class="btn-text">Retry</span>
-          </button>
+          <button id="error-retry" class="primary-btn retry-btn"><span class="btn-icon">↻</span><span class="btn-text">Retry</span></button>
           <button id="error-dismiss" class="secondary-btn">Go Back</button>
         </div>
       </div>
@@ -184,7 +185,9 @@
       <div id="tab-seo-brief" class="tab-panel glass-card active">
         <div class="tab-toolbar">
           <h2>SEO Intelligence Brief</h2>
-          <button class="copy-btn" data-target="seo-brief-content">Copy All</button>
+          <div class="toolbar-right">
+            <button class="copy-btn" data-target="seo-brief-content">Copy All</button>
+          </div>
         </div>
         <div id="seo-brief-content" class="tab-content markdown-body"></div>
       </div>
@@ -193,7 +196,9 @@
       <div id="tab-outline" class="tab-panel glass-card">
         <div class="tab-toolbar">
           <h2>Article Outline</h2>
-          <button class="copy-btn" data-target="outline-content">Copy All</button>
+          <div class="toolbar-right">
+            <button class="copy-btn" data-target="outline-content">Copy All</button>
+          </div>
         </div>
         <div id="outline-content" class="tab-content markdown-body"></div>
       </div>
@@ -202,20 +207,26 @@
       <div id="tab-article" class="tab-panel glass-card">
         <div class="tab-toolbar">
           <h2>Full Article</h2>
-          <div class="toolbar-right">
+          <div class="toolbar-right toolbar-badges">
+            <span id="reading-time-badge" class="reading-badge hidden">0 min read</span>
             <span id="word-count-badge" class="word-badge hidden">0 words</span>
-            <button class="copy-btn copy-md-btn" data-copy-type="markdown" data-target="article-content">Copy Raw Markdown</button>
-            <button class="copy-btn copy-clean-btn" data-copy-type="clean" data-target="article-content">Copy Clean Text</button>
+            <span id="quality-score-badge" class="quality-badge hidden">Score: 0/100</span>
+          </div>
+          <div class="toolbar-right toolbar-actions">
+            <button class="copy-btn" data-copy-type="markdown" data-target="article-content">Copy Markdown</button>
+            <button class="copy-btn" data-copy-type="clean" data-target="article-content">Copy Clean Text</button>
           </div>
         </div>
-        <div id="article-content" class="tab-content markdown-body"></div>
+        <div id="article-content" class="tab-content markdown-body article-body"></div>
       </div>
 
       <!-- Tab: SEO Metadata -->
       <div id="tab-seo-meta" class="tab-panel glass-card">
         <div class="tab-toolbar">
           <h2>SEO Metadata</h2>
-          <button class="copy-btn" data-target="seo-meta-content">Copy All</button>
+          <div class="toolbar-right">
+            <button class="copy-btn" id="copy-all-meta-btn">Copy All Metadata</button>
+          </div>
         </div>
         <div id="seo-meta-content" class="tab-content seo-meta-body"></div>
       </div>
@@ -228,9 +239,14 @@
         <div id="image-prompt-content" class="tab-content image-prompt-body"></div>
       </div>
 
-      <!-- Watermark -->
-      <div class="output-watermark">
-        <span class="watermark-icon">✦</span> Generated by Inkraft · Powered by Gemini
+      <!-- New Article button + Watermark -->
+      <div class="output-footer">
+        <button id="new-article-btn" class="new-article-btn hidden">
+          <span>✦</span> New Article
+        </button>
+        <div class="output-watermark">
+          <span class="watermark-icon">✦</span> Generated by Inkraft · Powered by Gemini
+        </div>
       </div>
     </section>
 
@@ -238,7 +254,7 @@
 
   <!-- ── Footer ──────────────────────────────────────────────── -->
   <footer id="app-footer">
-    <p>Inkraft v1.0 — Powered by Gemini</p>
+    <p id="footer-text">Inkraft v1.0 — Powered by Gemini</p>
   </footer>
 
   <script src="app.js"></script>

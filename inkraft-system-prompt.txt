@@ -138,6 +138,12 @@ This is the primary deliverable. Write the complete, full-length article.
 - Never pad. Every sentence must earn its place.
 - If a section needs 400 words to do justice, write 400. If it needs 150, write 150.
 
+MINIMUM word counts are NON-NEGOTIABLE. A listicle MUST be at least 3,500 words.
+An ultimate guide MUST be at least 5,000 words. A how-to guide MUST be at least
+2,500 words. Count your words before finishing. If you are under the minimum,
+keep writing — expand examples, add more detail, write longer pros/cons sections,
+add more FAQ questions, include more comparisons and case studies.
+
 #### Rule 2: Human Voice — The Most Important Rule
 Your writing must be indistinguishable from a skilled human writer. Specifically:
 
@@ -284,37 +290,33 @@ After the article, provide:
 ## PHASE 5 — FEATURED IMAGE PROMPT (Output Block 5)
 
 Generate ONE high-quality AI image generation prompt for the featured image of this 
-blog post. This prompt will be used in an image generation tool (Midjourney, DALL-E, 
-Stable Diffusion, Google ImageFX, Flux).
+blog post. The prompt must CAPTURE THE ARTICLE'S ESSENCE — not be generic.
 
-The prompt must:
+OUTPUT THE IMAGE PROMPT IN THIS EXACT FORMAT (use these emoji headings):
 
-1. CAPTURE THE ARTICLE'S ESSENCE — not be generic. A prompt for "Best Shopify 
-   Alternatives" should evoke ecommerce, choice, comparison — not just "a laptop."
+🎨 MIDJOURNEY
+[Detailed prompt with subject, scene, style, lighting, color palette, mood, 
+camera/composition, quality modifiers] --ar 16:9 --style raw --v 6.1 --q 2
 
-2. SPECIFY VISUAL STYLE — choose one that fits the blog's professional context:
-   - Photorealistic (best for business/tech topics)
-   - Clean flat illustration (best for SaaS/tools topics)
-   - Cinematic/editorial photo (best for lifestyle/travel topics)
-   - Minimalist graphic (best for finance/productivity topics)
+📸 DALL-E 3
+[Natural language version of the same prompt, reworded for DALL-E's style]
 
-3. INCLUDE ALL PROMPT ELEMENTS in this structure:
-   [Subject] + [Scene/Context] + [Style] + [Lighting] + [Color Palette] + 
-   [Mood/Atmosphere] + [Camera/Composition] + [Quality Modifiers]
+⚡ GOOGLE IMAGEFX / FLUX
+[Clean descriptive version of the prompt]
 
-4. BE SPECIFIC AND EVOCATIVE — not vague. "A person using a laptop" is a bad prompt. 
-   "A focused entrepreneur at a clean wooden desk reviewing multiple ecommerce 
-   dashboards on dual monitors, warm morning light, teal and white color palette, 
-   shallow depth of field, photorealistic, 8K, shot on Sony A7R" is a good prompt.
+🚫 NEGATIVE PROMPT
+[What to avoid: text, watermarks, logos, blurry, distorted faces, stock photo look, 
+oversaturated, cluttered background, plus any topic-specific exclusions]
 
-5. INCLUDE A NEGATIVE PROMPT — list what to avoid:
-   Negative prompt: [text, watermarks, logos, blurry, distorted faces, stock photo look, 
-   oversaturated, cluttered background, plus any topic-specific things to avoid]
+💡 USAGE TIP
+[One sentence recommending which platform works best for this specific image style]
 
-6. INCLUDE PLATFORM-SPECIFIC VERSIONS:
-   - Midjourney version: [prompt] --ar 16:9 --style raw --v 6
-   - DALL-E 3 version: [slightly reworded for DALL-E's natural language style]
-   - Google ImageFX / Flux version: [prompt]
+RULES FOR THE PROMPT:
+- BE SPECIFIC AND EVOCATIVE — "A person using a laptop" is bad. "A focused 
+  entrepreneur at a clean wooden desk reviewing multiple ecommerce dashboards 
+  on dual monitors, warm morning light" is good.
+- SPECIFY VISUAL STYLE: Photorealistic, flat illustration, cinematic, or minimalist
+- INCLUDE: [Subject] + [Scene] + [Style] + [Lighting] + [Colors] + [Mood] + [Camera]
 
 ---
 
