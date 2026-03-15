@@ -21,7 +21,24 @@
       </div>
       <p class="tagline">AI Blog Article Engine</p>
     </div>
+    <!-- History toggle -->
+    <button id="history-toggle" class="history-toggle-btn" title="Article History">
+      <span class="history-icon">📚</span>
+      <span class="history-label">History</span>
+    </button>
   </header>
+
+  <!-- ── History Sidebar ─────────────────────────────────────── -->
+  <aside id="history-sidebar" class="history-sidebar">
+    <div class="history-header">
+      <h2>Recent Articles</h2>
+      <button id="history-close" class="history-close-btn">✕</button>
+    </div>
+    <div id="history-list" class="history-list">
+      <p class="history-empty">No articles generated yet.</p>
+    </div>
+  </aside>
+  <div id="history-overlay" class="history-overlay"></div>
 
   <!-- ── Main ────────────────────────────────────────────────── -->
   <main id="app-main">
@@ -79,19 +96,60 @@
           </div>
         </div>
 
-        <button type="submit" id="generate-btn" class="primary-btn">
-          <span class="btn-icon">⚡</span>
-          Generate Article
-        </button>
+        <div class="generate-row">
+          <button type="submit" id="generate-btn" class="primary-btn">
+            <span class="btn-icon">⚡</span>
+            <span class="btn-text">Generate Article</span>
+          </button>
+          <span class="shortcut-hint">⌘ Enter</span>
+        </div>
       </form>
     </section>
 
     <!-- Loading Overlay -->
     <section id="loading-section" class="glass-card hidden">
       <div class="loader-container">
-        <div class="spinner"></div>
-        <p id="loading-status" class="loading-text">Initializing Inkraft engine...</p>
-        <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+        <div class="loader-steps" id="loader-steps">
+          <div class="loader-step active" data-step="1">
+            <div class="step-indicator">
+              <div class="step-dot"></div>
+              <span class="step-number">1</span>
+            </div>
+            <span class="step-label">Analysing search intent...</span>
+          </div>
+          <div class="loader-step" data-step="2">
+            <div class="step-indicator">
+              <div class="step-dot"></div>
+              <span class="step-number">2</span>
+            </div>
+            <span class="step-label">Mapping semantic entities...</span>
+          </div>
+          <div class="loader-step" data-step="3">
+            <div class="step-indicator">
+              <div class="step-dot"></div>
+              <span class="step-number">3</span>
+            </div>
+            <span class="step-label">Building article outline...</span>
+          </div>
+          <div class="loader-step" data-step="4">
+            <div class="step-indicator">
+              <div class="step-dot"></div>
+              <span class="step-number">4</span>
+            </div>
+            <span class="step-label">Writing full article...</span>
+          </div>
+          <div class="loader-step" data-step="5">
+            <div class="step-indicator">
+              <div class="step-dot"></div>
+              <span class="step-number">5</span>
+            </div>
+            <span class="step-label">Generating SEO package & image prompt...</span>
+          </div>
+        </div>
+        <div class="progress-bar">
+          <div id="progress-fill" class="progress-fill"></div>
+        </div>
+        <p id="loading-percent" class="loading-percent">0%</p>
       </div>
     </section>
 
@@ -100,7 +158,13 @@
       <div class="error-container">
         <span class="error-icon">⚠</span>
         <p id="error-message"></p>
-        <button id="error-dismiss" class="secondary-btn">Try Again</button>
+        <div class="error-actions">
+          <button id="error-retry" class="primary-btn retry-btn">
+            <span class="btn-icon">↻</span>
+            <span class="btn-text">Retry</span>
+          </button>
+          <button id="error-dismiss" class="secondary-btn">Go Back</button>
+        </div>
       </div>
     </section>
 
@@ -140,7 +204,8 @@
           <h2>Full Article</h2>
           <div class="toolbar-right">
             <span id="word-count-badge" class="word-badge hidden">0 words</span>
-            <button class="copy-btn" data-target="article-content">Copy Article</button>
+            <button class="copy-btn copy-md-btn" data-copy-type="markdown" data-target="article-content">Copy Raw Markdown</button>
+            <button class="copy-btn copy-clean-btn" data-copy-type="clean" data-target="article-content">Copy Clean Text</button>
           </div>
         </div>
         <div id="article-content" class="tab-content markdown-body"></div>
@@ -152,16 +217,20 @@
           <h2>SEO Metadata</h2>
           <button class="copy-btn" data-target="seo-meta-content">Copy All</button>
         </div>
-        <div id="seo-meta-content" class="tab-content markdown-body"></div>
+        <div id="seo-meta-content" class="tab-content seo-meta-body"></div>
       </div>
 
       <!-- Tab: Image Prompt -->
       <div id="tab-image-prompt" class="tab-panel glass-card">
         <div class="tab-toolbar">
           <h2>Featured Image Prompt</h2>
-          <button class="copy-btn" data-target="image-prompt-content">Copy Prompt</button>
         </div>
-        <div id="image-prompt-content" class="tab-content markdown-body"></div>
+        <div id="image-prompt-content" class="tab-content image-prompt-body"></div>
+      </div>
+
+      <!-- Watermark -->
+      <div class="output-watermark">
+        <span class="watermark-icon">✦</span> Generated by Inkraft · Powered by Gemini
       </div>
     </section>
 

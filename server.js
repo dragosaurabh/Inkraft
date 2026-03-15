@@ -25,11 +25,14 @@ app.use(express.static(join(__dirname, 'public')));
 function getModel() {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey || apiKey === 'your_key_here') {
-    throw new Error('GEMINI_API_KEY is not set. Add it to your .env file.');
+    throw new Error(
+      'GEMINI_API_KEY is not set. Add your GEMINI_API_KEY to the .env file. ' +
+      'Get your free key at https://aistudio.google.com/app/apikey'
+    );
   }
   const genAI = new GoogleGenerativeAI(apiKey);
   return genAI.getGenerativeModel({
-    model: 'gemini-1.5-pro',
+    model: 'gemini-2.5-flash',
     systemInstruction: systemPrompt,
   });
 }
