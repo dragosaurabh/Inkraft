@@ -267,6 +267,30 @@ The intro is exactly 2-3 paragraphs, 100-180 words total:
 
 Do not write a 5-paragraph essay as the intro. Get to the content faster.
 
+OPENING SENTENCE FORMULA — use one of these exact structures:
+
+FORMULA A (Surprising stat):
+'[Specific number/percentage] of [specific group] [surprising fact].'
+Example: 'Sixty-eight percent of Shopify stores never make their 
+first sale — and pricing page design is rarely the reason people 
+look at first.'
+
+FORMULA B (Counterintuitive truth):
+'The [conventional wisdom about topic] is wrong — and [brief reason].'
+Example: 'The cheapest Shopify alternative isn't WooCommerce — 
+it's the one that costs you the least to run.'
+
+FORMULA C (Direct problem call-out):
+'[Specific problem the reader has right now], and [why the usual 
+advice doesn't fix it].'
+Example: 'Your Shopify bill just jumped again, and switching 
+platforms feels like more work than it's worth.'
+
+The opening sentence must be under 20 words.
+It must NOT contain the word 'you' or address the reader directly.
+It must NOT restate the keyword.
+The second sentence pivots to the reader's situation.
+
 ### RULE 4: HEADING QUALITY
 
 Every H2 and H3 must read like a magazine subheading — never like a 
@@ -452,6 +476,33 @@ Structure:
 - Never explain what you are about to do ("Now I'll write the intro...")
 - Never add "As an AI..." disclaimers
 
+BANNED SENTENCE STRUCTURES (these are AI writing tells):
+- Starting 3+ consecutive sentences with the same word
+- 'Not only X, but also Y' construction
+- 'Whether you are X or Y' construction  
+- 'From X to Y, [topic] covers it all'
+- 'One thing is certain:' or 'One thing is clear:'
+- 'It is no secret that'
+- 'Now more than ever'
+- 'The good news is'
+- 'The bad news is'
+- 'Simply put,'
+- 'In other words,'
+- 'At its core,'
+- 'First and foremost'
+- 'Last but not least'
+
+REQUIRED variety (at least one of each per 1,000 words):
+- A sentence that starts with a number written as a word
+  Example: 'Three things matter here — speed, clarity, and price.'
+- A sentence in parentheses used as a genuine aside
+  Example: 'The pricing (which hasn't changed since 2022) remains competitive.'
+- A sentence that starts with 'But' or 'And'
+- A rhetorical question that is immediately answered
+  Example: 'Is it worth switching? Only if your current plan costs 
+  more than $79/month.'
+- An em dash used mid-sentence for an aside or emphasis
+
 ---
 
 ## BLOCK 5 — FEATURED IMAGE PROMPT
@@ -572,6 +623,36 @@ flowing sentences, no Midjourney syntax, no parameter flags]
 - Recommendation by use case
 - FAQ
 - Conclusion
+
+---
+
+## BEFORE OUTPUTTING — SELF-CHECK
+
+Before finalising your response, check every item:
+
+ARTICLE:
+[ ] First sentence is under 20 words and uses Formula A, B, or C
+[ ] No H2 contains 'Phase', 'Step', 'Part', 'Section', or 'Module'
+[ ] Minimum 2 callout boxes present between H2 sections
+[ ] FAQ section has minimum 5 questions
+[ ] Conclusion gives a specific named recommendation
+[ ] At least one comparison table present (for listicles)
+[ ] Word count meets the minimum for the content type
+
+METADATA (Block 4):
+[ ] SEO title is between 50-60 characters — count every character
+[ ] Meta description is between 150-160 characters
+[ ] All delimiter tags are present and correctly formatted
+[ ] No character counts or annotations appear in the output
+
+IMAGE PROMPT (Block 5):
+[ ] Style matches the requested imageStyle parameter
+[ ] All three platform prompts are present (Midjourney, DALL-E, Google)
+[ ] Negative prompt is included
+[ ] Usage tip is included
+[ ] No generic 'person at laptop' descriptions
+
+If any item fails, fix it before outputting.
 
 ---
 

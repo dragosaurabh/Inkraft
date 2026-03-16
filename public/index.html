@@ -46,6 +46,14 @@
       <h2>Recent Articles</h2>
       <button id="history-close" class="history-close-btn">✕</button>
     </div>
+    <div class="history-search">
+      <input 
+        type="text" 
+        id="history-search-input" 
+        placeholder="Search articles..." 
+        autocomplete="off"
+      />
+    </div>
     <div id="history-list" class="history-list">
       <p class="history-empty">No articles generated yet.</p>
     </div>
@@ -288,6 +296,7 @@
             <button class="copy-btn" data-copy-type="wp-html" data-target="article-content">Copy WordPress HTML</button>
             <button class="copy-btn" data-copy-type="markdown" data-target="article-content">Copy Markdown</button>
             <button class="copy-btn" data-copy-type="clean" data-target="article-content">Copy Clean Text</button>
+            <button class="copy-btn" id="download-md-btn">↓ Download .md</button>
           </div>
         </div>
         <div id="article-content" class="tab-content markdown-body article-body"></div>

@@ -12,6 +12,9 @@ One keyword. Five outputs. Zero editing required.
 [![Gemini](https://img.shields.io/badge/Powered%20by-Gemini%202.5-blue.svg)](https://ai.google.dev)
 [![GitHub Stars](https://img.shields.io/github/stars/dragosaurabh/Inkraft?style=social)](https://github.com/dragosaurabh/Inkraft/stargazers)
 
+**[⚡ Try the live demo](https://inkraft.up.railway.app)** · 
+**[⭐ Star on GitHub](https://github.com/dragosaurabh/Inkraft)**
+
 </div>
 
 ---
@@ -61,7 +64,7 @@ Built for bloggers, content marketers, SEO professionals, and anyone who publish
 - V1 (dark) and V2 (light) themes — toggle anytime, persists across sessions
 - Partial regeneration — refresh just the image prompt or SEO metadata without rewriting the full article
 - Section-level rewrite — hover any H2 heading to rewrite just that section
-- Article history — last 5 articles saved locally
+- Article history — last 20 articles saved locally with search
 - Quality score (0–100) based on word count, structure, and content completeness
 - Reading progress bar while scrolling the article
 - Fully responsive — works on mobile, tablet, laptop, and desktop
@@ -90,6 +93,15 @@ Built for bloggers, content marketers, SEO professionals, and anyone who publish
 | AI Model | Google Gemini 2.5 Flash |
 | AI SDK | `@google/generative-ai` |
 | Streaming | Server-Sent Events (SSE) |
+
+---
+
+## Deploy in One Click
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/Inkraft)
+
+> After deploying, set your `GEMINI_API_KEY` environment variable 
+> in the Railway dashboard under Settings → Variables.
 
 ---
 
@@ -188,7 +200,7 @@ For major changes, please open an issue first to discuss what you'd like to chan
 
 ## Roadmap
 
-- [ ] One-click deploy to Railway / Render
+- [x] One-click deploy to Railway / Render
 - [ ] Bulk generation (multiple keywords at once)
 - [ ] WordPress direct publish via REST API
 - [ ] Article export as .docx

@@ -1286,14 +1286,14 @@
   // ══════════════════════════════════════════════════════════════════
 
   const HISTORY_KEY = 'inkraft_history';
-  const MAX_HISTORY = 5;
+  const MAX_HISTORY = 20;
 
   function getHistory() { try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch { return []; } }
 
   function saveToHistory(fullText) {
     const keyword = keywordInput.value.trim();
     const wc = countWords(rawContent['article'] || '');
-    const entry = { id: Date.now(), keyword, date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), wordCount: wc, rawContent: { ...rawContent }, fullText };
+    const entry = { id: Date.now(), keyword, title: window.currentState.articleTitle || keyword, date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), wordCount: wc, rawContent: { ...rawContent }, fullText };
     const history = getHistory();
     history.unshift(entry);
     if (history.length > MAX_HISTORY) history.pop();
@@ -1303,8 +1303,21 @@
 
   function renderHistory() {
     const history = getHistory();
-    if (history.length === 0) { historyList.innerHTML = '<p class="history-empty">No articles generated yet.</p>'; return; }
-    historyList.innerHTML = history.map(e => `<button class="history-item" data-id="${e.id}"><div class="history-item-keyword">${escapeHtml(e.keyword)}</div><div class="history-item-meta"><span>${e.date}</span><span class="history-dot">·</span><span>${e.wordCount.toLocaleString()} words</span></div></button>`).join('');
+    if (history.length === 0) { 
+      historyList.innerHTML = '<p class="history-empty">No articles yet. Generate your first article to see it here.</p>'; 
+      return; 
+    }
+    historyList.innerHTML = history.map(e => `
+      <button class="history-item" data-id="${e.id}">
+        <div class="history-item-title">${escapeHtml(e.title || e.keyword)}</div>
+        <div class="history-item-keyword">${escapeHtml(e.keyword)}</div>
+        <div class="history-item-meta">
+          <span>${e.date}</span>
+          <span class="history-dot">·</span>
+          <span>${(e.wordCount || 0).toLocaleString()} words</span>
+        </div>
+      </button>
+    `).join('');
   }
 
   function loadHistoryEntry(id) {
@@ -1344,6 +1357,8 @@
     // Reset any inline transform from swipe
     historySidebar.style.transform = '';
     historySidebar.style.transition = '';
+    const historySearchInput = document.getElementById('history-search-input');
+    if (historySearchInput) historySearchInput.value = '';
   }
   function isSidebarOpen() { return historySidebar.classList.contains('open'); }
 
@@ -1514,6 +1529,92 @@
   }
 
   window.addEventListener('scroll', updateReadingProgress, { passive: true });
+
+  // ── Download .md button ────────────────────────────────────────
+  document.getElementById('download-md-btn').addEventListener('click', () => {
+    const content = rawContent['article'];
+    if (!content) return;
+    
+    // Generate filename from article title or keyword
+    const title = window.currentState.articleTitle 
+      || window.currentState.keyword 
+      || 'inkraft-article';
+    const filename = title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .substring(0, 60) + '.md';
+    
+    // Add frontmatter for Jekyll/Hugo/Astro compatibility
+    const seoTitle = document.getElementById('seo-meta-content')
+      ?.querySelector('[data-field="seo-title"] .meta-field-value')
+      ?.textContent?.trim() || '';
+    const metaDesc = document.getElementById('seo-meta-content')
+      ?.querySelector('[data-field="meta-desc"] .meta-field-value')
+      ?.textContent?.trim() || '';
+    const slug = rawContent['seo-meta']
+      ? extractDelimitedClient(rawContent['seo-meta'], 'URL_SLUG')
+      : '';
+    
+    const date = new Date().toISOString().split('T')[0];
+    
+    const frontmatter = `---
+title: "${seoTitle || title}"
+description: "${metaDesc}"
+slug: "${slug}"
+date: ${date}
+generated_by: Inkraft
+---
+
+`;
+    
+    const fullContent = frontmatter + content;
+    
+    const blob = new Blob([fullContent], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    // Visual feedback
+    const btn = document.getElementById('download-md-btn');
+    const orig = btn.textContent;
+    btn.textContent = '✓ Downloaded!';
+    setTimeout(() => { btn.textContent = orig; }, 2000);
+  });
+
+  // ── History search ─────────────────────────────────────────────
+  const historySearchInput = document.getElementById('history-search-input');
+  historySearchInput.addEventListener('input', () => {
+    const query = historySearchInput.value.toLowerCase().trim();
+    const history = getHistory();
+    const filtered = query 
+      ? history.filter(e => 
+          (e.title || e.keyword).toLowerCase().includes(query) || 
+          e.keyword.toLowerCase().includes(query)
+        )
+      : history;
+    
+    if (filtered.length === 0) {
+      historyList.innerHTML = `<p class="history-empty">No articles match "${escapeHtml(query)}"</p>`;
+      return;
+    }
+    historyList.innerHTML = filtered.map(e => `
+      <button class="history-item" data-id="${e.id}">
+        <div class="history-item-title">${escapeHtml(e.title || e.keyword)}</div>
+        <div class="history-item-keyword">${escapeHtml(e.keyword)}</div>
+        <div class="history-item-meta">
+          <span>${e.date}</span>
+          <span class="history-dot">·</span>
+          <span>${(e.wordCount || 0).toLocaleString()} words</span>
+        </div>
+      </button>
+    `).join('');
+  });
 
   // Init
   renderHistory();
