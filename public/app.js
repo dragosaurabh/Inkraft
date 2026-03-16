@@ -40,6 +40,12 @@
 
   const DEFAULT_TITLE = 'Inkraft — AI Blog Article Engine';
   let selectedImageStyle = 'photorealistic';
+  let activeTab = 'seo-brief';
+
+  window.currentState = {
+    keyword: '', tone: '', contentType: '', wordCount: '', audience: '', 
+    imageStyle: 'photorealistic', articleTitle: '', articleExcerpt: ''
+  };
 
   const tabsNav = document.getElementById('tabs-nav');
   const wordCountBadge = document.getElementById('word-count-badge');
@@ -226,10 +232,10 @@
   }
 
   function updateOptionsSummary() {
-    const stylePart = `Style: ${getStyleLabel(selectedImageStyle)}`;
-    const tonePart = `Tone: ${toneSelect.options[toneSelect.selectedIndex]?.text || 'Auto'}`;
-    const typePart = `Type: ${typeSelect.options[typeSelect.selectedIndex]?.text || 'Auto-detect'}`;
-    optionsSummary.textContent = `${stylePart} · ${tonePart} · ${typePart}`;
+    const stylePart = `Style: <strong>${getStyleLabel(selectedImageStyle)}</strong>`;
+    const tonePart = `Tone: <strong>${toneSelect.options[toneSelect.selectedIndex]?.text || 'Auto'}</strong>`;
+    const typePart = `Type: <strong>${typeSelect.options[typeSelect.selectedIndex]?.text || 'Auto-detect'}</strong>`;
+    optionsSummary.innerHTML = `${stylePart} · ${tonePart} · ${typePart}`;
   }
 
   toneSelect.addEventListener('change', updateOptionsSummary);
@@ -273,12 +279,21 @@
   });
 
   function switchTab(tabId) {
+    activeTab = tabId;
     tabsNav.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     const btn = tabsNav.querySelector(`[data-tab="${tabId}"]`);
     if (btn) btn.classList.add('active');
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
     const panel = document.getElementById(`tab-${tabId}`);
     if (panel) panel.classList.add('active');
+    // Show/hide reading progress bar
+    const progressBar = document.getElementById('reading-progress-bar');
+    if (tabId === 'article' && rawContent['article']) {
+      progressBar.classList.remove('hidden');
+      updateReadingProgress();
+    } else {
+      progressBar.classList.add('hidden');
+    }
   }
 
   // ── Copy buttons ────────────────────────────────────────────────
@@ -315,12 +330,44 @@
     const fields = document.querySelectorAll('#seo-meta-content .meta-field');
     const lines = [];
     fields.forEach(f => {
-      const label = f.querySelector('.meta-field-label')?.textContent?.replace(/\d+\s*\/.*chars/g, '').trim() || '';
+      const label = f.querySelector('.meta-field-label')?.textContent?.trim() || '';
       const value = f.querySelector('.meta-field-value')?.textContent?.trim() || '';
       if (label && value) lines.push(`${label}: ${value}`);
     });
     const text = lines.join('\n');
     if (text) doCopy(copyAllMetaBtn, text);
+  });
+
+  // ── Change Style link ─────────────────────────────────────────
+  const changeStyleLink = document.getElementById('change-style-link');
+  changeStyleLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    // Open the Advanced Options if collapsed
+    if (optionsPanel.classList.contains('collapsed')) {
+      optionsPanel.classList.remove('collapsed');
+      optionsPanel.classList.add('expanded');
+      toggleBtn.classList.add('open');
+      optionsSummary.classList.add('hidden');
+    }
+    // Scroll to the style picker
+    const styleSection = document.querySelector('.image-style-section');
+    if (styleSection) {
+      styleSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  });
+
+  // ── Copy All Prompts ──────────────────────────────────────────
+  const copyAllPromptsBtn = document.getElementById('copy-all-prompts-btn');
+  copyAllPromptsBtn.addEventListener('click', () => {
+    const boxes = document.querySelectorAll('#image-prompt-content .prompt-box');
+    const parts = [];
+    boxes.forEach(box => {
+      const title = box.querySelector('.prompt-box-header')?.textContent?.replace('Copy', '').trim() || '';
+      const body = box.querySelector('.prompt-box-body')?.textContent?.trim() || '';
+      if (title && body) parts.push(`━━━ ${title} ━━━\n${body}`);
+    });
+    const text = parts.join('\n\n');
+    if (text) doCopy(copyAllPromptsBtn, text);
   });
 
   function doCopy(btn, text, customMessage = '✓ Copied') {
@@ -333,65 +380,104 @@
   }
 
   function stripMarkdown(md) {
+    // Strip any leaked delimiter tags
+    md = md.replace(/%%[A-Z0-9_]+_(?:START|END)%%/g, '').trim();
     return md.replace(/#{1,6}\s/g, '').replace(/\*\*\*(.+?)\*\*\*/g, '$1').replace(/\*\*(.+?)\*\*/g, '$1').replace(/__(.+?)__/g, '$1').replace(/\*(.+?)\*/g, '$1').replace(/_(.+?)_/g, '$1').replace(/~~(.+?)~~/g, '$1').replace(/`([^`]+)`/g, '$1').replace(/```[\s\S]*?```/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/^>\s*/gm, '').replace(/^[-*+]\s+/gm, '• ').replace(/^\d+\.\s+/gm, '').replace(/^---+$/gm, '').replace(/^\*\*\*+$/gm, '').replace(/[━─=]{3,}/g, '').replace(/\n{3,}/g, '\n\n').trim();
   }
 
   function convertToWordPressHTML(md) {
+    if (!md) return '';
+    
+    // Strip delimiter tags first
+    md = md.replace(/%%[A-Z0-9_]+_(?:START|END)%%/g, '').trim();
+    
     let html = md;
-    
-    // Callouts: 💡 **Pro Tip:**
-    html = html.replace(/^(?:>\s*)?💡\s*\*\*(.*?)\*\*(.*)$/gm, '<div class="wp-block-callout" style="background:#f0f7ff;border-left:4px solid #6B4EFF;padding:16px 20px;border-radius:0 8px 8px 0;margin:24px 0"><p>💡 <strong>$1</strong>$2</p></div>');
-    html = html.replace(/^(?:>\s*)?⚠️\s*\*\*(.*?)\*\*(.*)$/gm, '<div class="wp-block-callout" style="background:#fff4f0;border-left:4px solid #FF503C;padding:16px 20px;border-radius:0 8px 8px 0;margin:24px 0"><p>⚠️ <strong>$1</strong>$2</p></div>');
-    html = html.replace(/^(?:>\s*)?🔑\s*\*\*(.*?)\*\*(.*)$/gm, '<div class="wp-block-callout" style="background:#f5ffeb;border-left:4px solid #1AA84C;padding:16px 20px;border-radius:0 8px 8px 0;margin:24px 0"><p>🔑 <strong>$1</strong>$2</p></div>');
 
-    html = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    html = renderTables(html).replace(/<table>/, '<table class="wp-block-table">');
-    
-    html = html.replace(/^### (.+)$/gm, '<h3 class="wp-block-heading">$1</h3>');
-    html = html.replace(/^## (.+)$/gm, '<h2 class="wp-block-heading">$1</h2>');
-    html = html.replace(/^# (.+)$/gm, '<h1 class="wp-block-heading">$1</h1>');
-    
+    // Step 1: Handle callout boxes BEFORE any escaping
+    // These produce real HTML so must come first
+    html = html.replace(
+      /^(?:>\s*)?💡\s*\*\*Pro Tip:\*\*\s*(.+)$/gm,
+      '<div class="wp-block-callout" style="background:#f0f7ff;border-left:4px solid #6B4EFF;padding:16px 20px;border-radius:0 8px 8px 0;margin:24px 0"><p>💡 <strong>Pro Tip:</strong> $1</p></div>'
+    );
+    html = html.replace(
+      /^(?:>\s*)?⚠️\s*\*\*Watch Out:\*\*\s*(.+)$/gm,
+      '<div class="wp-block-callout" style="background:#fff4f0;border-left:4px solid #FF503C;padding:16px 20px;border-radius:0 8px 8px 0;margin:24px 0"><p>⚠️ <strong>Watch Out:</strong> $1</p></div>'
+    );
+    html = html.replace(
+      /^(?:>\s*)?🔑\s*\*\*Quick Win:\*\*\s*(.+)$/gm,
+      '<div class="wp-block-callout" style="background:#f5ffeb;border-left:4px solid #1AA84C;padding:16px 20px;border-radius:0 8px 8px 0;margin:24px 0"><p>🔑 <strong>Quick Win:</strong> $1</p></div>'
+    );
+
+    // Step 2: Split into lines, process non-HTML lines only
+    const lines = html.split('\n');
+    const processed = lines.map(line => {
+      // Don't escape lines that are already HTML (callout divs)
+      if (line.trim().startsWith('<div') || line.trim().startsWith('</div>')) {
+        return line;
+      }
+      // Escape HTML special chars in content lines
+      return line
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    });
+    html = processed.join('\n');
+
+    // Step 3: Convert markdown to WordPress HTML
+    // Tables
+    html = renderTables(html).replace(/<table>/g, '<table class="wp-block-table">');
+
+    // Headings
+    html = html.replace(/^#### (.+)$/gm, '<h4 class="wp-block-heading">$1</h4>');
+    html = html.replace(/^### (.+)$/gm,  '<h3 class="wp-block-heading">$1</h3>');
+    html = html.replace(/^## (.+)$/gm,   '<h2 class="wp-block-heading">$1</h2>');
+    html = html.replace(/^# (.+)$/gm,    '<h1 class="wp-block-heading">$1</h1>');
+
+    // Inline formatting
     html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
-    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
-    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-    html = html.replace(/_(.+?)_/g, '<em>$1</em>');
-    
-    html = html.replace(/^---+$/gm, '<hr class="wp-block-separator"/>');
+    html = html.replace(/\*\*(.+?)\*\*/g,     '<strong>$1</strong>');
+    html = html.replace(/__(.+?)__/g,         '<strong>$1</strong>');
+    html = html.replace(/\*(.+?)\*/g,         '<em>$1</em>');
+    html = html.replace(/_(.+?)_/g,           '<em>$1</em>');
+
+    // Horizontal rules
+    html = html.replace(/^---+$/gm,    '<hr class="wp-block-separator"/>');
     html = html.replace(/^\*\*\*+$/gm, '<hr class="wp-block-separator"/>');
-    
-    // Blockquote (restore tags if we escaped them)
-    html = html.replace(/^(?:&gt;|>) (?!<div class="wp-block-callout)(.+)$/gm, '<blockquote class="wp-block-quote"><p>$1</p></blockquote>');
+
+    // Blockquotes (generic, non-callout)
+    html = html.replace(
+      /^(?:&gt;|>) (?!<div)(.+)$/gm,
+      '<blockquote class="wp-block-quote"><p>$1</p></blockquote>'
+    );
     html = html.replace(/<\/blockquote>\n<blockquote[^>]*>/g, '\n');
-    
-    // Lists
+
+    // Unordered lists
     html = html.replace(/((?:^[-*+] .+\n?)+)/gm, (m) => {
-      const items = m.trim().split('\n').map(l => `<li>${l.replace(/^[-*+]\s+/, '')}</li>`).join('\n');
-      return `<ul>${items}</ul>\n`;
-    });
-    html = html.replace(/((?:^\d+\. .+\n?)+)/gm, (m) => {
-      const items = m.trim().split('\n').map(l => `<li>${l.replace(/^\d+\.\s+/, '')}</li>`).join('\n');
-      return `<ol>${items}</ol>\n`;
+      const items = m.trim().split('\n')
+        .filter(l => l.trim())
+        .map(l => `<li>${l.replace(/^[-*+]\s+/, '')}</li>`)
+        .join('\n');
+      return `<ul>\n${items}\n</ul>\n`;
     });
 
-    // Paragraphs (wrap anything that isn't already block-level)
-    const blockTags = ['h1', 'h2', 'h3', 'ul', 'ol', 'li', 'blockquote', 'hr', 'div', 'table', 'thead', 'tbody', 'tr', 'th', 'td'];
+    // Ordered lists
+    html = html.replace(/((?:^\d+\. .+\n?)+)/gm, (m) => {
+      const items = m.trim().split('\n')
+        .filter(l => l.trim())
+        .map(l => `<li>${l.replace(/^\d+\.\s+/, '')}</li>`)
+        .join('\n');
+      return `<ol>\n${items}\n</ol>\n`;
+    });
+
+    // Paragraphs
+    const blockTags = ['h1','h2','h3','h4','ul','ol','blockquote','hr','div','table','thead','tbody','tr'];
     html = html.split('\n\n').map(block => {
       const t = block.trim();
       if (!t) return '';
-      const startParam = t.match(/^<(\w+)/);
-      if (startParam && blockTags.includes(startParam[1])) return t;
-      // It's a text block, wrap in <p>
+      const tagMatch = t.match(/^<(\w+)/);
+      if (tagMatch && blockTags.includes(tagMatch[1])) return t;
       return `<p>${t.replace(/\n/g, '<br/>')}</p>`;
     }).filter(Boolean).join('\n\n');
-
-    // Unescape HTML tags inside the callouts that got escaped
-    html = html.replace(/&lt;div class="wp-block-callout"(.*?)&gt;/g, '<div class="wp-block-callout"$1>');
-    html = html.replace(/&lt;\/div&gt;/g, '</div>');
-    html = html.replace(/&lt;p&gt;/g, '<p>');
-    html = html.replace(/&lt;\/p&gt;/g, '</p>');
-    html = html.replace(/&lt;strong&gt;/g, '<strong>');
-    html = html.replace(/&lt;\/strong&gt;/g, '</strong>');
 
     return html.trim();
   }
@@ -434,6 +520,18 @@
   async function startGeneration(body) {
     isGenerating = true;
     saveSettings(body);
+    
+    window.currentState = {
+      keyword: body.keyword || '',
+      tone: body.tone || '',
+      contentType: body.contentType || '',
+      wordCount: body.wordCount || '',
+      audience: body.audience || '',
+      imageStyle: body.imageStyle || 'photorealistic',
+      articleTitle: '',
+      articleExcerpt: ''
+    };
+    
     resetOutput();
     showLoading();
 
@@ -492,29 +590,77 @@
 
   // ── Parse the response into 5 blocks ────────────────────────────
   function parseBlocks(text) {
-    const blocks = { 'seo-brief': '', 'outline': '', 'article': '', 'seo-meta': '', 'image-prompt': '' };
+    const blocks = { 
+      'seo-brief': '', 
+      'outline': '', 
+      'article': '', 
+      'seo-meta': '', 
+      'image-prompt': '' 
+    };
+
+    // ── Method 1: New delimiter format %%BLOCK1_START%% ──
+    function extractBlock(txt, tag) {
+      const s = `%%${tag}_START%%`;
+      const e = `%%${tag}_END%%`;
+      const si = txt.indexOf(s);
+      const ei = txt.indexOf(e);
+      if (si === -1 || ei === -1) return '';
+      return txt.substring(si + s.length, ei).trim();
+    }
+
+    const b1 = extractBlock(text, 'BLOCK1');
+    const b2 = extractBlock(text, 'BLOCK2');
+    const b3 = extractBlock(text, 'BLOCK3');
+    const b4 = extractBlock(text, 'BLOCK4');
+    const b5 = extractBlock(text, 'BLOCK5');
+
+    if (b1 || b2 || b3 || b4 || b5) {
+      // Delimiter format found — use it
+      if (b1) blocks['seo-brief'] = b1;
+      if (b2) blocks['outline'] = b2;
+      if (b3) blocks['article'] = b3
+        .replace(/%%BLOCK\d+_(?:START|END)%%/g, '')
+        .replace(/%%[A-Z_]+_(?:START|END)%%/g, '')
+        .trim();
+      if (b4) blocks['seo-meta'] = b4;
+      if (b5) blocks['image-prompt'] = b5;
+      return blocks;
+    }
+
+    // ── Method 2: Fallback — look for OUTPUT BLOCK headers ──
     const blockPatterns = [
-      { key: 'seo-brief', pattern: /#{1,3}\s*OUTPUT\s+BLOCK\s+1[^\n]*/i },
-      { key: 'outline', pattern: /#{1,3}\s*OUTPUT\s+BLOCK\s+2[^\n]*/i },
-      { key: 'article', pattern: /#{1,3}\s*OUTPUT\s+BLOCK\s+3[^\n]*/i },
-      { key: 'seo-meta', pattern: /#{1,3}\s*OUTPUT\s+BLOCK\s+4[^\n]*/i },
+      { key: 'seo-brief',    pattern: /#{1,3}\s*OUTPUT\s+BLOCK\s+1[^\n]*/i },
+      { key: 'outline',      pattern: /#{1,3}\s*OUTPUT\s+BLOCK\s+2[^\n]*/i },
+      { key: 'article',      pattern: /#{1,3}\s*OUTPUT\s+BLOCK\s+3[^\n]*/i },
+      { key: 'seo-meta',     pattern: /#{1,3}\s*OUTPUT\s+BLOCK\s+4[^\n]*/i },
       { key: 'image-prompt', pattern: /#{1,3}\s*OUTPUT\s+BLOCK\s+5[^\n]*/i },
     ];
 
     const positions = [];
     for (const { key, pattern } of blockPatterns) {
       const match = text.match(pattern);
-      if (match) positions.push({ key, index: text.indexOf(match[0]), headerLength: match[0].length });
+      if (match) {
+        positions.push({ 
+          key, 
+          index: text.indexOf(match[0]), 
+          headerLength: match[0].length 
+        });
+      }
     }
     positions.sort((a, b) => a.index - b.index);
 
     for (let i = 0; i < positions.length; i++) {
       const start = positions[i].index + positions[i].headerLength;
       const end = i + 1 < positions.length ? positions[i + 1].index : text.length;
-      let content = text.slice(start, end).trim().replace(/^[━─\-=]{3,}\s*/gm, '').trim();
+      let content = text.slice(start, end).trim()
+        .replace(/^[━─\-=]{3,}\s*/gm, '').trim();
       blocks[positions[i].key] = content;
     }
-    if (positions.length === 0 && text.trim()) blocks['article'] = text.trim();
+
+    // ── Method 3: Last resort — put everything in article tab ──
+    if (positions.length === 0 && text.trim()) {
+      blocks['article'] = text.trim();
+    }
 
     // Apply SEO Fix if provided by the server
     if (seoFixData && blocks['seo-meta']) {
@@ -577,17 +723,28 @@
     }
 
     if (rawContent['article']) {
+      const titleMatch = rawContent['article'].match(/^#\s+(.+)/m);
+      if (titleMatch) {
+        window.currentState.articleTitle = titleMatch[1].replace(/\*\*/g, '').trim();
+        document.title = `${window.currentState.articleTitle} — Inkraft`;
+      }
+      const pMatch = rawContent['article'].match(/\n\n(.*?)\n\n/);
+      if (pMatch) {
+        window.currentState.articleExcerpt = stripMarkdown(pMatch[1]).substring(0, 150);
+      }
+      
       const wc = updateWordCount(rawContent['article']);
       const score = computeQualityScore(rawContent['article']);
       attachRewriteButtons();
       showSuccessToast(wc, score);
-
-      // FIX 6.1: Update browser tab title
-      const titleMatch = rawContent['article'].match(/^#\s+(.+)/m);
-      if (titleMatch) {
-        document.title = `${titleMatch[1].replace(/\*\*/g, '').trim()} — Inkraft`;
-      }
     }
+
+    // Wire up contenteditable SEO fields
+    if (rawContent['seo-meta']) initSeoEditableFields();
+
+    // Show Regnerate Bar
+    const regenBar = document.getElementById('regen-bar');
+    if (regenBar) regenBar.classList.remove('hidden');
 
     outputSection.classList.remove('hidden');
     loadingSection.classList.add('hidden');
@@ -731,38 +888,272 @@
   function escapeRegExp(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 
   // ══════════════════════════════════════════════════════════════════
+  //  REGENERATE BAR Handlers
+  // ══════════════════════════════════════════════════════════════════
+  
+  document.querySelectorAll('.regen-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const target = e.target.dataset.target;
+      if (target === 'all') {
+        const keyword = keywordInput.value.trim() || window.currentState.keyword;
+        if (!keyword) return;
+        const body = { 
+          keyword, 
+          audience: audienceInput.value.trim(), 
+          tone: toneSelect.value, 
+          contentType: typeSelect.value, 
+          wordCount: wordcountInput.value.trim(), 
+          imageStyle: selectedImageStyle 
+        };
+        startGeneration(body);
+      } else {
+        regenSection(target);
+      }
+    });
+  });
+
+  async function regenSection(target) {
+    if (!window.currentState || !window.currentState.keyword) return;
+
+    const btn = document.querySelector(`.regen-btn[data-target="${target}"]`);
+    const origHtml = btn.innerHTML;
+    btn.innerHTML = '⏳ Regenerating...';
+    btn.disabled = true;
+
+    let endpoint = '';
+    let tabId = '';
+
+    if (target === 'image') { endpoint = '/api/regen-image'; tabId = 'image-prompt'; }
+    else if (target === 'seo') { endpoint = '/api/regen-seo'; tabId = 'seo-meta'; }
+    else if (target === 'article') { endpoint = '/api/regen-article'; tabId = 'article'; }
+
+    const contentEl = contentMap[tabId];
+    if (contentEl) {
+      contentEl.innerHTML = `<div class="regen-spinner">✨ Regenerating ${target}...</div>`;
+      contentEl.classList.add('streaming-cursor');
+    }
+    switchTab(tabId);
+
+    try {
+      const resp = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(window.currentState)
+      });
+      if (!resp.ok) throw new Error('API Error');
+
+      if (target === 'seo') {
+        const json = await resp.json();
+        if (json.success && json.metadata) {
+          let fakeMd = '';
+          const m = json.metadata;
+          if (m.seoTitle) fakeMd += `%%SEO_TITLE_START%%\n${m.seoTitle}\n%%SEO_TITLE_END%%\n`;
+          if (m.metaDesc) fakeMd += `%%META_DESC_START%%\n${m.metaDesc}\n%%META_DESC_END%%\n`;
+          if (m.urlSlug) fakeMd += `%%URL_SLUG_START%%\n${m.urlSlug}\n%%URL_SLUG_END%%\n`;
+          if (m.primaryKw) fakeMd += `%%PRIMARY_KW_START%%\n${m.primaryKw}\n%%PRIMARY_KW_END%%\n`;
+          if (m.secondaryKw) fakeMd += `%%SECONDARY_KW_START%%\n${m.secondaryKw}\n%%SECONDARY_KW_END%%\n`;
+          if (m.categories) fakeMd += `%%CATEGORIES_START%%\n${m.categories}\n%%CATEGORIES_END%%\n`;
+          if (m.tags) fakeMd += `%%TAGS_START%%\n${m.tags}\n%%TAGS_END%%\n`;
+          if (m.readTime) fakeMd += `%%READ_TIME_START%%\n${m.readTime}\n%%READ_TIME_END%%\n`;
+          if (m.schemaType) fakeMd += `%%SCHEMA_TYPE_START%%\n${m.schemaType}\n%%SCHEMA_TYPE_END%%\n`;
+          
+          rawContent['seo-meta'] = fakeMd;
+          contentEl.innerHTML = renderSeoMeta(fakeMd);
+          initSeoEditableFields();
+        }
+      } else {
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let fullText = '';
+        contentEl.innerHTML = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop();
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const dataStr = line.slice(6);
+              if (dataStr === '[DONE]') continue;
+              try {
+                const parsed = JSON.parse(dataStr);
+                if (parsed.error) throw new Error(parsed.error);
+                if (parsed.text) {
+                  fullText += parsed.text;
+                  if (target === 'image') contentEl.innerHTML = renderImagePrompt(fullText);
+                  else contentEl.innerHTML = renderMarkdown(fullText);
+                }
+              } catch (e) {}
+            }
+          }
+        }
+        
+        rawContent[tabId] = fullText;
+        if (target === 'article') {
+          updateWordCount(fullText);
+          computeQualityScore(fullText);
+          attachRewriteButtons();
+        }
+      }
+    } catch (e) {
+      if (contentEl) contentEl.innerHTML = `<div class="regen-error">❌ Failed to regenerate. Please try again.</div>`;
+    } finally {
+      if (contentEl) contentEl.classList.remove('streaming-cursor');
+      btn.innerHTML = origHtml;
+      btn.disabled = false;
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════════
   //  SEO METADATA RENDERER
   // ══════════════════════════════════════════════════════════════════
 
+  function extractDelimitedClient(text, fieldName) {
+    const start = `%%${fieldName}_START%%`;
+    const end = `%%${fieldName}_END%%`;
+    const startIdx = text.indexOf(start);
+    const endIdx = text.indexOf(end);
+    if (startIdx === -1) return '';
+    const actualEndIdx = endIdx !== -1 ? endIdx : text.length;
+    let raw = text.substring(startIdx + start.length, actualEndIdx).trim();
+    return raw.replace(/^["']|["']$/g, '');
+  }
+
   function renderSeoMeta(md) {
+    const fieldsData = [
+      { key: 'SEO_TITLE', label: 'SEO Title', min: 50, max: 60 },
+      { key: 'META_DESC', label: 'Meta Description', min: 150, max: 160 },
+      { key: 'URL_SLUG', label: 'URL Slug' },
+      { key: 'PRIMARY_KW', label: 'Primary Keyword' },
+      { key: 'SECONDARY_KW', label: 'Secondary Keywords' },
+      { key: 'CATEGORIES', label: 'Categories' },
+      { key: 'TAGS', label: 'Tags' },
+      { key: 'READ_TIME', label: 'Reading Time' },
+      { key: 'SCHEMA_TYPE', label: 'Schema Type' },
+    ];
+
     const fields = [];
-    const lines = md.split('\n');
-    let curr = null;
-    for (const line of lines) {
-      const t = line.trim();
-      if (!t) continue;
-      const m = t.match(/^\*\*(.+?)\*\*[:\s]*(.*)/);
-      if (m) { if (curr) fields.push(curr); curr = { label: m[1].replace(/[*]/g, '').trim(), value: m[2].trim() }; }
-      else if (curr) curr.value += (curr.value ? ' ' : '') + t;
+    for (const f of fieldsData) {
+      const val = extractDelimitedClient(md, f.key);
+      if (val) fields.push({ ...f, value: val.replace(/\*\*/g, '') });
     }
-    if (curr) fields.push(curr);
+
     if (fields.length === 0) return renderMarkdown(md);
 
     return fields.map(f => {
-      const ci = getCharInfo(f.label, f.value);
-      return `<div class="meta-field"><div class="meta-field-content"><div class="meta-field-label">${escapeHtml(f.label)}${ci}</div><div class="meta-field-value">${escapeHtml(f.value)}</div></div><button class="copy-btn meta-copy" data-value="${escapeAttr(f.value)}">Copy</button></div>`;
+      const ci = getCharRange(f.label);
+      const len = f.value.length;
+      let badgeCls = '';
+      let badgeText = '';
+      let barWidth = 0;
+      let barColor = '#6B4EFF';
+      let charHint = '';
+      let countText = `${len} chars`;
+
+      if (ci) {
+        charHint = `Target: ${ci.min}–${ci.max} characters`;
+        if (len < ci.min) {
+          badgeCls = 'bad'; badgeText = '✗ Too short';
+          barWidth = Math.max(5, (len / ci.max) * 100);
+          barColor = '#F09595';
+        } else if (len > ci.max) {
+          badgeCls = 'warn'; badgeText = '⚠ Too long';
+          barWidth = 100;
+          barColor = '#EF9F27';
+        } else {
+          badgeCls = 'good'; badgeText = '✓ Good';
+          barWidth = ((len - ci.min) / (ci.max - ci.min)) * 100;
+          barColor = '#0D9F6F';
+        }
+      }
+
+      const charBarHtml = ci ? `
+        <div class="char-bar"><div class="char-bar-fill" style="width: ${barWidth}%; background: ${barColor}"></div></div>
+        <div class="char-hint">${charHint}</div>` : '';
+
+      const indicatorsHtml = ci ? `
+        <div class="meta-field-indicators">
+          <span class="char-count">${countText}</span>
+          <span class="char-badge ${badgeCls}">${badgeText}</span>
+          <button class="copy-btn-small meta-copy-inline" data-value="${escapeAttr(f.value)}">Copy</button>
+        </div>` : `
+        <div class="meta-field-indicators">
+          <button class="copy-btn-small meta-copy-inline" data-value="${escapeAttr(f.value)}">Copy</button>
+        </div>`;
+
+      return `<div class="meta-field" data-min="${ci?.min || ''}" data-max="${ci?.max || ''}">
+        <div class="meta-field-header">
+          <span class="meta-field-label">${escapeHtml(f.label)}</span>
+          ${indicatorsHtml}
+        </div>
+        <div class="meta-field-value" contenteditable="true" spellcheck="false">${escapeHtml(f.value)}</div>
+        ${charBarHtml}
+      </div>`;
     }).join('');
   }
 
-  function getCharInfo(label, value) {
+  function getCharRange(label) {
     const lower = label.toLowerCase();
-    let min = 0, max = 0;
-    if (lower.includes('seo title') || (lower.includes('title') && !lower.includes('meta') && !lower.includes('read'))) { min = 50; max = 60; }
-    else if (lower.includes('meta description')) { min = 150; max = 160; }
-    else return '';
-    const len = value.length;
-    const cls = (len >= min && len <= max) ? 'char-good' : 'char-bad';
-    return ` <span class="char-counter ${cls}">${len} / ${min}–${max} chars</span>`;
+    if (lower.includes('seo title') || (lower.includes('title') && !lower.includes('meta') && !lower.includes('read'))) return { min: 50, max: 60 };
+    if (lower.includes('meta description')) return { min: 150, max: 160 };
+    return null;
+  }
+
+  function initSeoEditableFields() {
+    const fields = document.querySelectorAll('#seo-meta-content .meta-field');
+    fields.forEach(field => {
+      const valueEl = field.querySelector('.meta-field-value');
+      const countEl = field.querySelector('.char-count');
+      const badgeEl = field.querySelector('.char-badge');
+      const barFillEl = field.querySelector('.char-bar-fill');
+      const min = parseInt(field.dataset.min, 10);
+      const max = parseInt(field.dataset.max, 10);
+
+      if (!valueEl || !min || !max) return;
+
+      valueEl.addEventListener('input', () => {
+        const len = valueEl.textContent.length;
+        if (countEl) countEl.textContent = `${len} chars`;
+
+        if (badgeEl) {
+          badgeEl.className = 'char-badge';
+          if (len < min) {
+            badgeEl.classList.add('bad'); badgeEl.textContent = '✗ Too short';
+          } else if (len > max) {
+            badgeEl.classList.add('warn'); badgeEl.textContent = '⚠ Too long';
+          } else {
+            badgeEl.classList.add('good'); badgeEl.textContent = '✓ Good';
+          }
+        }
+
+        if (barFillEl) {
+          if (len < min) {
+            barFillEl.style.width = Math.max(5, (len / max) * 100) + '%';
+            barFillEl.style.background = '#F09595';
+          } else if (len > max) {
+            barFillEl.style.width = '100%';
+            barFillEl.style.background = '#EF9F27';
+          } else {
+            barFillEl.style.width = ((len - min) / (max - min)) * 100 + '%';
+            barFillEl.style.background = '#0D9F6F';
+          }
+        }
+      });
+    });
+
+    // Handle inline copy buttons
+    document.querySelectorAll('.meta-copy-inline').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const field = btn.closest('.meta-field');
+        const value = field?.querySelector('.meta-field-value')?.textContent?.trim() || btn.dataset.value;
+        if (value) doCopy(btn, value);
+      });
+    });
   }
 
   // ══════════════════════════════════════════════════════════════════
@@ -770,12 +1161,16 @@
   // ══════════════════════════════════════════════════════════════════
 
   function renderImagePrompt(md) {
+    // Hide empty state when we have content
+    const emptyState = document.getElementById('image-prompt-empty');
+    if (emptyState) emptyState.classList.add('hidden');
+
     const defs = [
-      { key: 'midjourney', emoji: '🎨', title: 'Midjourney', pattern: /🎨\s*MIDJOURNEY/i, alt: /midjourney/i },
+      { key: 'midjourney', emoji: '🎨', title: 'MIDJOURNEY', pattern: /🎨\s*MIDJOURNEY/i, alt: /midjourney/i },
       { key: 'dalle', emoji: '📸', title: 'DALL-E 3', pattern: /📸\s*DALL[\-·]?E/i, alt: /dall[\-·]?e/i },
-      { key: 'imagefx', emoji: '⚡', title: 'Google ImageFX / Flux', pattern: /⚡\s*(GOOGLE|FLUX)/i, alt: /(imagefx|flux)/i },
-      { key: 'negative', emoji: '🚫', title: 'Negative Prompt', pattern: /🚫\s*NEGATIVE/i, alt: /negative\s*prompt/i },
-      { key: 'tip', emoji: '💡', title: 'Usage Tip', pattern: /💡\s*USAGE/i, alt: /usage\s*tip/i },
+      { key: 'imagefx', emoji: '⚡', title: 'GOOGLE IMAGEFX / FLUX', pattern: /⚡\s*(GOOGLE|FLUX)/i, alt: /(imagefx|flux)/i },
+      { key: 'negative', emoji: '🚫', title: 'NEGATIVE PROMPT', pattern: /🚫\s*NEGATIVE/i, alt: /negative\s*prompt/i },
+      { key: 'tip', emoji: '💡', title: 'USAGE TIP', pattern: /💡\s*USAGE/i, alt: /usage\s*tip/i },
     ];
 
     const lines = md.split('\n');
@@ -796,16 +1191,16 @@
         }
       }
       if (!matched && current) current.content.push(t.replace(/^[*\-]+\s*/, ''));
-      else if (!matched && !current) current = { emoji: '🎨', title: 'Image Prompt', key: 'general', content: [t] };
+      else if (!matched && !current) current = { emoji: '🎨', title: 'IMAGE PROMPT', key: 'general', content: [t] };
     }
     if (current) sections.push(current);
 
-    if (sections.length === 0) return `<div class="prompt-card"><div class="prompt-card-header"><span class="prompt-card-icon">🎨</span><span class="prompt-card-title">Image Prompt</span><button class="copy-btn prompt-copy" data-value="${escapeAttr(md)}">Copy</button></div><div class="prompt-card-body">${renderMarkdown(md)}</div></div>`;
+    if (sections.length === 0) return `<div class="prompt-box"><div class="prompt-box-header">🎨 IMAGE PROMPT<button class="copy-btn prompt-copy" data-value="${escapeAttr(md)}">Copy</button></div><div class="prompt-box-body">${escapeHtml(md)}</div></div>`;
 
     return sections.map(s => {
       const text = s.content.join('\n').replace(/^[━─\-=]{3,}\s*/gm, '').trim();
-      const copyHtml = s.key !== 'tip' ? `<button class="copy-btn prompt-copy" data-value="${escapeAttr(text)}">Copy</button>` : '';
-      return `<div class="prompt-card prompt-card-${s.key}"><div class="prompt-card-header"><span class="prompt-card-icon">${s.emoji}</span><span class="prompt-card-title">${escapeHtml(s.title)}</span>${copyHtml}</div><div class="prompt-card-body"><p>${escapeHtml(text)}</p></div></div>`;
+      const copyHtml = s.key !== 'tip' ? `<button class="copy-btn-small prompt-copy" data-value="${escapeAttr(text)}">Copy</button>` : '';
+      return `<div class="prompt-box prompt-box-${s.key}"><div class="prompt-box-header"><span>${s.emoji} ${escapeHtml(s.title)}</span>${copyHtml}</div><div class="prompt-box-body">${escapeHtml(text)}</div></div>`;
     }).join('');
   }
 
@@ -926,6 +1321,7 @@
       if (btn) btn.classList.add('has-content');
     }
     if (rawContent['article']) { updateWordCount(rawContent['article']); computeQualityScore(rawContent['article']); attachRewriteButtons(); }
+    if (rawContent['seo-meta']) initSeoEditableFields();
     outputSection.classList.remove('hidden');
     exampleChips.classList.add('hidden');
     newArticleBtn.classList.remove('hidden');
@@ -1026,6 +1422,7 @@
   function resetOutput() {
     for (const key of Object.keys(rawContent)) { rawContent[key] = ''; contentMap[key].innerHTML = ''; contentMap[key].classList.remove('streaming-cursor'); }
     lastAutoTab = '';
+    activeTab = 'seo-brief';
     tabsNav.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('has-content', 'active'));
     tabsNav.querySelector('[data-tab="seo-brief"]').classList.add('active');
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -1036,6 +1433,15 @@
     outputSection.classList.add('hidden');
     errorSection.classList.add('hidden');
     newArticleBtn.classList.add('hidden');
+    // Hide reading progress
+    const progressBar = document.getElementById('reading-progress-bar');
+    if (progressBar) progressBar.classList.add('hidden');
+    // Hide regen bar
+    const regenBar = document.getElementById('regen-bar');
+    if (regenBar) regenBar.classList.add('hidden');
+    // Show empty state in image prompt
+    const emptyState = document.getElementById('image-prompt-empty');
+    if (emptyState) emptyState.classList.remove('hidden');
   }
 
   function showLoading() {
@@ -1094,6 +1500,20 @@
     generateBtn.querySelector('.btn-icon').textContent = '⚡';
     isGenerating = false;
   }
+
+  // ── Reading progress bar ──────────────────────────────────────
+  function updateReadingProgress() {
+    const article = document.getElementById('article-content');
+    if (!article || activeTab !== 'article') return;
+    const rect = article.getBoundingClientRect();
+    const articleHeight = article.offsetHeight;
+    const scrolled = window.scrollY - article.offsetTop + window.innerHeight;
+    const progress = Math.min(Math.max(scrolled / articleHeight, 0), 1);
+    const fill = document.getElementById('reading-progress');
+    if (fill) fill.style.width = (progress * 100) + '%';
+  }
+
+  window.addEventListener('scroll', updateReadingProgress, { passive: true });
 
   // Init
   renderHistory();

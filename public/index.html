@@ -12,6 +12,11 @@
 </head>
 <body data-theme="v1">
 
+  <!-- ── Reading Progress Bar ──────────────────────────────── -->
+  <div id="reading-progress-bar" class="reading-progress-bar hidden">
+    <div id="reading-progress" class="reading-progress-fill"></div>
+  </div>
+
   <!-- ── V2 Top Accent Bar ────────────────────────────────────── -->
   <div class="v2-top-bar"></div>
 
@@ -113,37 +118,37 @@
             <div id="image-style-grid" class="image-style-grid">
               <button type="button" class="style-card selected" data-style="photorealistic">
                 <span class="style-check">✓</span>
-                <span class="style-icon">📸</span>
+                <span class="style-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg></span>
                 <span class="style-name">Photorealistic</span>
                 <span class="style-desc">Real & Editorial</span>
               </button>
               <button type="button" class="style-card" data-style="flat-illustration">
                 <span class="style-check">✓</span>
-                <span class="style-icon">🎨</span>
+                <span class="style-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="M2 2l7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg></span>
                 <span class="style-name">Flat Illustration</span>
                 <span class="style-desc">Clean & Modern</span>
               </button>
               <button type="button" class="style-card" data-style="cinematic">
                 <span class="style-check">✓</span>
-                <span class="style-icon">🌆</span>
+                <span class="style-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg></span>
                 <span class="style-name">Cinematic</span>
                 <span class="style-desc">Bold & Dramatic</span>
               </button>
               <button type="button" class="style-card" data-style="corporate-clean">
                 <span class="style-check">✓</span>
-                <span class="style-icon">💼</span>
+                <span class="style-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg></span>
                 <span class="style-name">Corporate Clean</span>
                 <span class="style-desc">Professional</span>
               </button>
               <button type="button" class="style-card" data-style="abstract-art">
                 <span class="style-check">✓</span>
-                <span class="style-icon">🎭</span>
+                <span class="style-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="4"></circle><line x1="21.17" y1="8" x2="12" y2="8"></line><line x1="3.95" y1="6.06" x2="8.54" y2="14"></line><line x1="10.88" y1="21.94" x2="15.46" y2="14"></line></svg></span>
                 <span class="style-name">Abstract Art</span>
                 <span class="style-desc">Creative & Bold</span>
               </button>
               <button type="button" class="style-card" data-style="isometric-3d">
                 <span class="style-check">✓</span>
-                <span class="style-icon">✏️</span>
+                <span class="style-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg></span>
                 <span class="style-name">Isometric 3D</span>
                 <span class="style-desc">Tech & Modern</span>
               </button>
@@ -153,7 +158,7 @@
 
         <!-- Options Summary (visible when collapsed) -->
         <div id="options-summary" class="options-summary">
-          Style: Photorealistic · Tone: Auto · Type: Auto-detect
+          Style: <strong>Photorealistic</strong> · Tone: <strong>Auto</strong> · Type: <strong>Auto-detect</strong>
         </div>
 
         <div class="generate-row">
@@ -240,6 +245,14 @@
           <button class="tab-btn" data-tab="seo-meta">SEO Metadata</button>
           <button class="tab-btn" data-tab="image-prompt">Image Prompt</button>
         </nav>
+        
+        <div id="regen-bar" class="regen-bar hidden">
+          <button class="regen-btn" data-target="article">↻ Regenerate Article</button>
+          <button class="regen-btn" data-target="image">↻ Regen Image Prompt</button>
+          <button class="regen-btn" data-target="seo">↻ Regen SEO Metadata</button>
+          <div class="regen-divider"></div>
+          <button class="regen-btn regen-all" data-target="all">⚠ Regenerate ALL</button>
+        </div>
       </div>
 
       <!-- Tab: SEO Brief -->
@@ -297,8 +310,34 @@
       <div id="tab-image-prompt" class="tab-panel glass-card">
         <div class="tab-toolbar">
           <h2>Featured Image Prompt</h2>
+          <div class="toolbar-right">
+            <a href="#" id="change-style-link" class="change-style-link">Change Style ↗</a>
+            <button class="copy-btn" id="copy-all-prompts-btn">Copy All Prompts</button>
+          </div>
         </div>
-        <div id="image-prompt-content" class="tab-content image-prompt-body"></div>
+        <div id="image-prompt-content" class="tab-content image-prompt-body">
+          <!-- Empty state -->
+          <div id="image-prompt-empty" class="image-prompt-empty">
+            <div class="empty-prompt-preview">
+              <div class="empty-prompt-card">
+                <div class="empty-prompt-header">🎨 MIDJOURNEY</div>
+                <div class="empty-prompt-body">A warm editorial-style photograph featuring...</div>
+              </div>
+              <div class="empty-prompt-card">
+                <div class="empty-prompt-header">📸 DALL-E 3</div>
+                <div class="empty-prompt-body">Create a photorealistic wide-format image of...</div>
+              </div>
+              <div class="empty-prompt-card">
+                <div class="empty-prompt-header">⚡ GOOGLE FLOW</div>
+                <div class="empty-prompt-body">Professional editorial photograph showing...</div>
+              </div>
+            </div>
+            <div class="empty-prompt-overlay">
+              <span class="empty-prompt-icon">🎨</span>
+              <p>Generate an article to see image prompts</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- New Article button + Watermark -->
