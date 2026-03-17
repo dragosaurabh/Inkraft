@@ -42,6 +42,50 @@
   let selectedImageStyle = 'photorealistic';
   let activeTab = 'seo-brief';
 
+  // ── Hero section — show to new users, hide after first use ──
+  const heroSection = document.getElementById('hero-section');
+  const heroDismiss = document.getElementById('hero-dismiss');
+  const HERO_DISMISSED_KEY = 'inkraft_hero_dismissed';
+
+  function initHero() {
+    // Need to safely check getHistory, but the function is defined later. 
+    // We'll use a try/catch or assume it exists. Actually, we can just read localStorage directly if getHistory is not hoisted.
+    const historyData = JSON.parse(localStorage.getItem('inkraft_history') || '[]');
+    const hasHistory = historyData.length > 0;
+    const dismissed = localStorage.getItem(HERO_DISMISSED_KEY);
+    
+    if (dismissed || hasHistory) {
+      if (heroSection) heroSection.classList.add('hidden');
+      return;
+    }
+    
+    // Show hero to new visitors
+    if (heroSection) heroSection.classList.remove('hidden');
+  }
+
+  function dismissHero() {
+    localStorage.setItem(HERO_DISMISSED_KEY, '1');
+    if (heroSection) {
+      heroSection.style.transition = 'opacity 0.3s, transform 0.3s';
+      heroSection.style.opacity = '0';
+      heroSection.style.transform = 'translateY(-10px)';
+      setTimeout(() => heroSection.classList.add('hidden'), 300);
+    }
+  }
+
+  if (heroDismiss) heroDismiss.addEventListener('click', dismissHero);
+
+  // Also dismiss when user starts typing
+  if (keywordInput) {
+    keywordInput.addEventListener('focus', () => {
+      if (heroSection && !heroSection.classList.contains('hidden')) {
+        dismissHero();
+      }
+    }, { once: true });
+  }
+
+  initHero();
+
   window.currentState = {
     keyword: '', tone: '', contentType: '', wordCount: '', audience: '', 
     imageStyle: 'photorealistic', articleTitle: '', articleExcerpt: ''
@@ -1744,6 +1788,14 @@ generated_by: Inkraft
       updateWordcountHelper();
       updateOptionsSummary();
       
+      // Hide onboarding banner when API key is saved
+      const ONBOARDING_KEY = 'inkraft_onboarding_dismissed';
+      const banner = document.getElementById('onboarding-banner');
+      if (banner && settings.apiKey) {
+        banner.classList.add('hidden');
+        localStorage.setItem(ONBOARDING_KEY, '1');
+      }
+      
       const orig = settingsSaveBtn.textContent;
       settingsSaveBtn.textContent = 'Saved!';
       setTimeout(() => {
@@ -1780,7 +1832,47 @@ generated_by: Inkraft
     });
   }
 
+  // ── Onboarding banner — show to users without API key ──
+  const ONBOARDING_KEY = 'inkraft_onboarding_dismissed';
+
+  function initOnboarding() {
+    const banner = document.getElementById('onboarding-banner');
+    if (!banner) return;
+    
+    const dismissed = localStorage.getItem(ONBOARDING_KEY);
+    const savedSettings = JSON.parse(localStorage.getItem(USER_SETTINGS_KEY) || '{}');
+    const hasApiKey = !!savedSettings.apiKey;
+    
+    // Hide if already dismissed or user has an API key
+    if (dismissed || hasApiKey) {
+      banner.classList.add('hidden');
+      return;
+    }
+    
+    banner.classList.remove('hidden');
+    
+    const closeBtn = document.getElementById('onboarding-close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        localStorage.setItem(ONBOARDING_KEY, '1');
+        banner.style.opacity = '0';
+        banner.style.transform = 'translateY(-8px)';
+        setTimeout(() => banner.classList.add('hidden'), 300);
+      });
+    }
+    
+    const openSetBtn = document.getElementById('onboarding-open-settings');
+    if (openSetBtn) {
+      openSetBtn.addEventListener('click', () => {
+        openSettings();
+        localStorage.setItem(ONBOARDING_KEY, '1');
+        banner.classList.add('hidden');
+      });
+    }
+  }
+
   // Init
   loadUserSettings();
+  setTimeout(initOnboarding, 100);
 
 })();

@@ -70,6 +70,47 @@
   <!-- ── Main ────────────────────────────────────────────────── -->
   <main id="app-main">
 
+    <!-- Hero Section -->
+    <div class="hero-section" id="hero-section">
+      <div class="hero-badge">✦ Free & Open Source</div>
+      <h1 class="hero-title">
+        Turn any keyword into a<br/>
+        <span class="hero-title-accent">publish-ready blog article</span>
+      </h1>
+      <p class="hero-subtitle">
+        One keyword. One click. A complete 4,000-word SEO article, 
+        metadata, outline, and AI image prompts — generated in under 
+        60 seconds by Gemini.
+      </p>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <span class="hero-stat-number">4,000+</span>
+          <span class="hero-stat-label">words per article</span>
+        </div>
+        <div class="hero-stat-divider"></div>
+        <div class="hero-stat">
+          <span class="hero-stat-number">5</span>
+          <span class="hero-stat-label">outputs per generation</span>
+        </div>
+        <div class="hero-stat-divider"></div>
+        <div class="hero-stat">
+          <span class="hero-stat-number">~60s</span>
+          <span class="hero-stat-label">generation time</span>
+        </div>
+      </div>
+      <div class="hero-features">
+        <span class="hero-feature">✓ Full article</span>
+        <span class="hero-feature">✓ SEO metadata</span>
+        <span class="hero-feature">✓ Image prompts</span>
+        <span class="hero-feature">✓ WordPress HTML</span>
+        <span class="hero-feature">✓ Article outline</span>
+        <span class="hero-feature">✓ Quality scoring</span>
+      </div>
+      <button class="hero-dismiss" id="hero-dismiss">
+        Start generating ↓
+      </button>
+    </div>
+
     <!-- Input Section -->
     <section id="input-section" class="glass-card">
       <form id="generate-form" autocomplete="off">
@@ -185,6 +226,21 @@
         </div>
       </form>
     </section>
+
+    <!-- Onboarding Banner -->
+    <div class="onboarding-banner" id="onboarding-banner">
+      <div class="onboarding-icon">🔑</div>
+      <div class="onboarding-text">
+        <strong>Add your Gemini API key</strong> to use your own 
+        free quota — or try Inkraft now using our shared key.
+        <button class="onboarding-settings-link" 
+          id="onboarding-open-settings">
+          Open Settings →
+        </button>
+      </div>
+      <button class="onboarding-close" id="onboarding-close" 
+        aria-label="Dismiss">✕</button>
+    </div>
 
     <!-- Example Chips (shown when no article yet) -->
     <div id="example-chips" class="example-chips">
