@@ -96,40 +96,36 @@ Built for bloggers, content marketers, SEO professionals, and anyone who publish
 
 ---
 
-## Deploy in One Click
+## Deploy to Vercel (Recommended)
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/Inkraft)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/dragosaurabh/Inkraft&env=GEMINI_API_KEY&envDescription=Your%20Google%20Gemini%20API%20key&envLink=https://aistudio.google.com/app/apikey)
 
-> After deploying, set your `GEMINI_API_KEY` environment variable 
-> in the Railway dashboard under Settings → Variables.
+**One-click deploy:**
+1. Click the button above
+2. Connect your GitHub account
+3. Enter your `GEMINI_API_KEY` when prompted
+4. Click Deploy — done in 60 seconds
 
----
+**After deploying:**
+- Go to your Vercel dashboard → Settings → Domains
+- Add `inkraft.io` (or your custom domain)
+- Point your domain DNS to Vercel's nameservers
 
-## Quick Start
+## Deploy to Railway (Alternative)
 
-### Prerequisites
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/dragosaurabh/Inkraft)
 
-- Node.js 18 or higher
-- A free Gemini API key — get one at [aistudio.google.com](https://aistudio.google.com/app/apikey)
+Same process — click, add API key, deploy.
 
-### Setup
+## Local Development
 ```bash
-# Clone the repository
 git clone https://github.com/dragosaurabh/Inkraft.git
 cd Inkraft
-
-# Install dependencies
 npm install
-
-# Configure environment
 cp .env.example .env
-# Open .env and paste your GEMINI_API_KEY
-
-# Start the server
+# Add your GEMINI_API_KEY to .env
 npm start
-
-# Open in your browser
-# → http://localhost:3000
+# Open http://localhost:3000
 ```
 
 ### Environment Variables
