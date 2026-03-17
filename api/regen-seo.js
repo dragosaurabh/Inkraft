@@ -29,9 +29,9 @@ function extractDelimited(text, fieldName) {
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
   
-  const { keyword, articleTitle, articleExcerpt } = req.body;
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: 'API key not set' });
+  const { keyword, articleTitle, articleExcerpt, apiKey: userApiKey } = req.body;
+  const apiKey = userApiKey || process.env.GEMINI_API_KEY;
+  if (!apiKey) return res.status(400).json({ error: 'API key not set. Add it in Settings.' });
 
   const prompt = `Generate ONLY SEO metadata for:
 Title: "${articleTitle}"

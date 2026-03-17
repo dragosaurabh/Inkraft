@@ -512,9 +512,30 @@
     const keyword = keywordInput.value.trim();
     if (!keyword) { keywordInput.focus(); return; }
     const body = { keyword, audience: audienceInput.value.trim(), tone: toneSelect.value, contentType: typeSelect.value, wordCount: wordcountInput.value.trim(), imageStyle: selectedImageStyle };
+    
+    // Inject user settings to bypass defaults
+    appendUserSettings(body);
+    
     lastRequestBody = body;
     startGeneration(body);
   });
+
+  // Helper to attach user settings to outgoing requests
+  function appendUserSettings(bodyObj) {
+    try {
+      const saved = JSON.parse(localStorage.getItem('inkraft_user_settings') || '{}');
+      if (saved.apiKey) bodyObj.apiKey = saved.apiKey;
+      if (saved.blogName) bodyObj.blogName = saved.blogName;
+      if (saved.niche) bodyObj.niche = saved.niche;
+      
+      // If UI fields are empty, let settings take over
+      if (!bodyObj.tone && saved.tone) bodyObj.tone = saved.tone;
+      if (!bodyObj.contentType && saved.contentType) bodyObj.contentType = saved.contentType;
+      if (!bodyObj.wordCount && saved.wordCount) bodyObj.wordCount = saved.wordCount;
+      if (!bodyObj.audience && saved.audience) bodyObj.audience = saved.audience;
+    } catch(e) {}
+    return bodyObj;
+  }
 
   // ── Start generation ────────────────────────────────────────────
   async function startGeneration(body) {
@@ -849,7 +870,8 @@
     btn.classList.add('rewriting');
 
     try {
-      const response = await fetch('/api/rewrite-section', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sectionContent, keyword }) });
+      const body = appendUserSettings({ sectionContent, keyword });
+      const response = await fetch('/api/rewrite-section', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       if (!response.ok) throw new Error('Rewrite failed');
 
       const reader = response.body.getReader();
@@ -905,6 +927,7 @@
           wordCount: wordcountInput.value.trim(), 
           imageStyle: selectedImageStyle 
         };
+        appendUserSettings(body);
         startGeneration(body);
       } else {
         regenSection(target);
@@ -935,10 +958,11 @@
     switchTab(tabId);
 
     try {
+      const body = appendUserSettings({ ...window.currentState });
       const resp = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(window.currentState)
+        body: JSON.stringify(body)
       });
       if (!resp.ok) throw new Error('API Error');
 
@@ -1616,6 +1640,147 @@ generated_by: Inkraft
     `).join('');
   });
 
+  // ══════════════════════════════════════════════════════════════════
+  //  USER SETTINGS (API KEY, PREFERENCES, BLOG CONTEXT)
+  // ══════════════════════════════════════════════════════════════════
+
+  const USER_SETTINGS_KEY = 'inkraft_user_settings';
+  
+  const settingsToggle = document.getElementById('settings-toggle');
+  const settingsClose = document.getElementById('settings-close');
+  const settingsOverlay = document.getElementById('settings-overlay');
+  const settingsModal = document.getElementById('settings-modal');
+  const apiKeyDot = document.getElementById('api-key-dot');
+
+  // Fields
+  const sApiKey = document.getElementById('settings-api-key');
+  const visBtn = document.getElementById('toggle-api-key-vis');
+  const sTone = document.getElementById('settings-tone');
+  const sType = document.getElementById('settings-type');
+  const sWordcount = document.getElementById('settings-wordcount');
+  const sImage = document.getElementById('settings-image');
+  const sBlogName = document.getElementById('settings-blogname');
+  const sNiche = document.getElementById('settings-niche');
+  const sAudience = document.getElementById('settings-audience');
+
+  // Toggle visibility
+  if (visBtn && sApiKey) {
+    visBtn.addEventListener('click', () => {
+      const isPass = sApiKey.type === 'password';
+      sApiKey.type = isPass ? 'text' : 'password';
+      visBtn.textContent = isPass ? '🔒' : '👁️';
+    });
+  }
+
+  function openSettings() {
+    if(!settingsOverlay || !settingsModal) return;
+    settingsOverlay.classList.add('open');
+    settingsModal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeSettings() {
+    if(!settingsOverlay || !settingsModal) return;
+    settingsOverlay.classList.remove('open');
+    settingsModal.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  if (settingsToggle) settingsToggle.addEventListener('click', openSettings);
+  if (settingsClose) settingsClose.addEventListener('click', closeSettings);
+  if (settingsOverlay) settingsOverlay.addEventListener('click', closeSettings);
+
+  function loadUserSettings() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(USER_SETTINGS_KEY) || '{}');
+      if (saved.apiKey && sApiKey) {
+        sApiKey.value = saved.apiKey;
+        if (apiKeyDot) apiKeyDot.classList.remove('hidden');
+      } else if (apiKeyDot) {
+        apiKeyDot.classList.add('hidden');
+      }
+      
+      if (saved.tone && sTone) sTone.value = saved.tone;
+      if (saved.contentType && sType) sType.value = saved.contentType;
+      if (saved.wordCount && sWordcount) sWordcount.value = saved.wordCount;
+      if (saved.imageStyle && sImage) sImage.value = saved.imageStyle;
+      
+      if (saved.blogName && sBlogName) sBlogName.value = saved.blogName;
+      if (saved.niche && sNiche) sNiche.value = saved.niche;
+      if (saved.audience && sAudience) sAudience.value = saved.audience;
+
+      // Apply to main generator form inputs if not already set manually
+      if (audienceInput && !audienceInput.value) audienceInput.value = saved.audience || '';
+      
+    } catch(e) { console.error('Error loading settings', e); }
+  }
+
+  const settingsSaveBtn = document.getElementById('settings-save');
+  if (settingsSaveBtn) {
+    settingsSaveBtn.addEventListener('click', () => {
+      const settings = {
+        apiKey: sApiKey ? sApiKey.value.trim() : '',
+        tone: sTone ? sTone.value.trim() : '',
+        contentType: sType ? sType.value.trim() : '',
+        wordCount: sWordcount ? sWordcount.value.trim() : '',
+        imageStyle: sImage ? sImage.value : '',
+        blogName: sBlogName ? sBlogName.value.trim() : '',
+        niche: sNiche ? sNiche.value.trim() : '',
+        audience: sAudience ? sAudience.value.trim() : ''
+      };
+      
+      localStorage.setItem(USER_SETTINGS_KEY, JSON.stringify(settings));
+      
+      if (settings.apiKey && apiKeyDot) apiKeyDot.classList.remove('hidden');
+      else if (apiKeyDot) apiKeyDot.classList.add('hidden');
+      
+      // Auto-apply defaults to main form
+      if (toneSelect) toneSelect.value = settings.tone;
+      if (typeSelect) typeSelect.value = settings.contentType;
+      if (wordcountInput) wordcountInput.value = settings.wordCount;
+      if (audienceInput) audienceInput.value = settings.audience;
+      if (settings.imageStyle) selectStyleCard(settings.imageStyle);
+      
+      updateWordcountHelper();
+      updateOptionsSummary();
+      
+      const orig = settingsSaveBtn.textContent;
+      settingsSaveBtn.textContent = 'Saved!';
+      setTimeout(() => {
+        settingsSaveBtn.textContent = orig;
+        closeSettings();
+      }, 800);
+    });
+  }
+
+  // Data management
+  const exportBtn = document.getElementById('settings-export');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', () => {
+      const history = getHistory();
+      const blob = new Blob([JSON.stringify(history, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `inkraft-history-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  const clearBtn = document.getElementById('settings-clear');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      if (confirm('Are you sure you want to clear all data? This will delete your article history, API key, and all settings. This cannot be undone.')) {
+        localStorage.clear();
+        location.reload();
+      }
+    });
+  }
+
   // Init
-  renderHistory();
+  loadUserSettings();
+
 })();

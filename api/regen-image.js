@@ -2,9 +2,9 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-function getModel() {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error('GEMINI_API_KEY is not set.');
+function getModel(userApiKey) {
+  const apiKey = userApiKey || process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error('API key is not set. Please add it in Settings.');
   const genAI = new GoogleGenerativeAI(apiKey);
   const raw = readFileSync(join(process.cwd(), 'inkraft-system-prompt.txt'), 'utf-8');
   return genAI.getGenerativeModel({
@@ -30,7 +30,7 @@ Image style: ${imageStyle || 'photorealistic'}
 Follow the Block 5 format exactly. Output ONLY the image prompt block.`;
 
   try {
-    const model = getModel();
+    const model = getModel(req.body.apiKey);
     const result = await model.generateContentStream({
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       generationConfig: { temperature: 0.85, maxOutputTokens: 8192 },

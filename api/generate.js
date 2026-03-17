@@ -12,9 +12,9 @@ function getSystemPrompt() {
   return raw + `\n\n---\n\n## YEAR CONTEXT\n\nThe current year is ${currentYear}. Always use ${currentYear} in article titles and content.\n`;
 }
 
-function getModel() {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error('GEMINI_API_KEY is not set.');
+function getModel(userApiKey) {
+  const apiKey = userApiKey || process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error('API key is not set. Please add it in Settings.');
   const genAI = new GoogleGenerativeAI(apiKey);
   return genAI.getGenerativeModel({
     model: 'gemini-2.5-flash',
@@ -55,7 +55,7 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
 
   try {
-    const model = getModel();
+    const model = getModel(req.body.apiKey);
     const result = await model.generateContentStream({
       contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
       generationConfig: {

@@ -5,9 +5,9 @@ import { join } from 'path';
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
   
-  const { keyword, tone, contentType, wordCount, audience } = req.body;
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return res.status(500).end();
+  const { keyword, tone, contentType, wordCount, audience, apiKey: userApiKey } = req.body;
+  const apiKey = userApiKey || process.env.GEMINI_API_KEY;
+  if (!apiKey) return res.status(400).json({ error: 'API key not set. Add it in Settings.' });
 
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache, no-transform');
