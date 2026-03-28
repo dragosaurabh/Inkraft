@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { search } from 'duck-duck-scrape';
+import { search, SafeSearchType } from 'duck-duck-scrape';
 import * as cheerio from 'cheerio';
 
 const currentYear = new Date().getFullYear();
@@ -55,15 +55,20 @@ export default async function handler(req, res) {
   try {
     // 1. Search Phase
     sendStatus(res, `Searching the web for "${keyword}"...`);
-    const searchResults = await search(keyword, { safeSearch: search.SafeSearchType.MODERATE });
-    
-    // Grab top 3 normal search results (ignoring weird ones)
-    const topResults = searchResults.results
-      .filter(r => r.url && r.title && !r.url.includes('youtube.com'))
-      .slice(0, 3);
+    let topResults = [];
+    try {
+        const searchResults = await search(keyword, { safeSearch: SafeSearchType ? SafeSearchType.MODERATE : 0 });
+        
+        // Grab top 3 normal search results (ignoring weird ones)
+        topResults = searchResults.results
+          .filter(r => r.url && r.title && !r.url.includes('youtube.com'))
+          .slice(0, 3);
+    } catch (searchErr) {
+        console.warn('DDG Search failed (rate limit/anomaly):', searchErr.message);
+    }
       
     if (topResults.length === 0) {
-      sendStatus(res, 'Could not find sufficient web results. Generating brief purely via AI...');
+      sendStatus(res, 'Live web search skipped/unavailable. Generating brief via AI knowledge...');
     }
 
     // 2. Scraping Phase
