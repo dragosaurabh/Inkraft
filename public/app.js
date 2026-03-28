@@ -674,9 +674,17 @@
       const s = `%%${tag}_START%%`;
       const e = `%%${tag}_END%%`;
       const si = txt.indexOf(s);
-      const ei = txt.indexOf(e);
-      if (si === -1 || ei === -1) return '';
-      return txt.substring(si + s.length, ei).trim();
+      if (si === -1) return '';
+      let ei = txt.indexOf(e);
+      if (ei === -1) {
+        // If END tag is missing, see if the next START tag exists to boundary it
+        const nextTagMatch = txt.substring(si + s.length).match(/%%BLOCK\d_START%%/);
+        ei = nextTagMatch ? (si + s.length + nextTagMatch.index) : txt.length;
+      }
+      let content = txt.substring(si + s.length, ei).trim();
+      // Remove any partial bleed markers at the end of streaming
+      content = content.replace(/%%[A-Z0-9_]*$/, '').trim();
+      return content;
     }
 
     const b1 = extractBlock(text, 'BLOCK1');
@@ -1305,6 +1313,15 @@
 
   function renderMarkdown(md) {
     let html = md;
+    
+    // Fix Outline formatting where headings might be inline
+    html = html.replace(/\b(H[23]:)\s*/gi, '\n\n$1 ');
+    html = html.replace(/^(?:H2|h2):\s*(.+)$/gm, '<h2>$1</h2>');
+    html = html.replace(/^(?:H3|h3):\s*(.+)$/gm, '<h3>$1</h3>');
+    html = html.replace(/^(?:TITLE|Title):\s*(.+)$/gm, '<h1>$1</h1>');
+    html = html.replace(/^(?:INTRO|Intro):\s*(.+)$/gm, '<p><strong>Intro:</strong> $1</p>');
+    html = html.replace(/^(?:CONCLUSION|Conclusion):\s*(.+)$/gm, '<br><p><strong>Conclusion:</strong> $1</p>');
+
     html = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => `<pre><code class="language-${lang}">${code.trim()}</code></pre>`);
     html = html.replace(/`([^`]+)`/g, '<code>$1</code>');

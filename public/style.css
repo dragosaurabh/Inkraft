@@ -789,6 +789,20 @@ select option { background: var(--bg-card); color: var(--text-primary); }
 }
 .seo-meta-empty.hidden { display: none; }
 
+/* SEO Metadata fields layout */
+.meta-field-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;
+}
+.meta-field-indicators {
+  display: flex; align-items: center; gap: 8px; font-size: 11px;
+}
+.copy-btn-small {
+  background: var(--bg-hover); border: 1px solid var(--border); color: var(--text-secondary);
+  padding: 2px 8px; border-radius: var(--radius-sm); font-size: 11px; cursor: pointer; transition: all 0.2s;
+  font-family: inherit; font-weight: 500;
+}
+.copy-btn-small:hover { background: var(--border); color: var(--text-primary); }
+
 /* Outline tab heading styles */
 #outline-content h1 { font-size: 22px; font-weight: 800; margin-bottom: 12px; color: var(--text-primary); }
 #outline-content h2 { font-size: 18px; font-weight: 700; margin-top: 20px; margin-bottom: 8px; color: var(--text-primary); border-left: 3px solid var(--accent); padding-left: 12px; }
