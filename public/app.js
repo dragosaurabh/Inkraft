@@ -423,6 +423,12 @@
     });
   }
 
+  // ── Sanitize article content — strip all %%...%% block markers ──
+  function sanitizeArticleContent(text) {
+    if (!text) return '';
+    return text.replace(/%%[A-Z0-9_]+(?:_(?:START|END))?%%/g, '').replace(/\n{3,}/g, '\n\n').trim();
+  }
+
   function stripMarkdown(md) {
     // Strip any leaked delimiter tags
     md = md.replace(/%%[A-Z0-9_]+_(?:START|END)%%/g, '').trim();
@@ -681,14 +687,11 @@
 
     if (b1 || b2 || b3 || b4 || b5) {
       // Delimiter format found — use it
-      if (b1) blocks['seo-brief'] = b1;
-      if (b2) blocks['outline'] = b2;
-      if (b3) blocks['article'] = b3
-        .replace(/%%BLOCK\d+_(?:START|END)%%/g, '')
-        .replace(/%%[A-Z_]+_(?:START|END)%%/g, '')
-        .trim();
-      if (b4) blocks['seo-meta'] = b4;
-      if (b5) blocks['image-prompt'] = b5;
+      if (b1) blocks['seo-brief'] = sanitizeArticleContent(b1);
+      if (b2) blocks['outline'] = sanitizeArticleContent(b2);
+      if (b3) blocks['article'] = sanitizeArticleContent(b3);
+      if (b4) blocks['seo-meta'] = b4; // keep delimiters for SEO parser
+      if (b5) blocks['image-prompt'] = sanitizeArticleContent(b5);
       return blocks;
     }
 
@@ -807,9 +810,10 @@
     // Wire up contenteditable SEO fields
     if (rawContent['seo-meta']) initSeoEditableFields();
 
-    // Show Regnerate Bar
+    // Show Regenerate Bar only when content was actually generated
     const regenBar = document.getElementById('regen-bar');
-    if (regenBar) regenBar.classList.remove('hidden');
+    const hasContent = rawContent['article'] || rawContent['seo-brief'] || rawContent['outline'];
+    if (regenBar && hasContent) regenBar.classList.remove('hidden');
 
     outputSection.classList.remove('hidden');
     loadingSection.classList.add('hidden');
@@ -1385,40 +1389,101 @@
       historyList.innerHTML = '<p class="history-empty">No articles yet. Generate your first article to see it here.</p>'; 
       return; 
     }
-    historyList.innerHTML = history.map(e => `
+    historyList.innerHTML = history.map(e => {
+      // Calculate word count from actual content, not metadata
+      let wc = 0;
+      if (e.rawContent && e.rawContent['article']) {
+        wc = countWords(e.rawContent['article']);
+      } else if (e.wordCount) {
+        wc = e.wordCount;
+      }
+      const wcText = wc > 0 ? `${wc.toLocaleString()} words` : '—';
+
+      // Friendly date: "Mar 28" without year
+      let dateText = e.date || '';
+      // Strip year suffix like ", 2026"
+      dateText = dateText.replace(/,?\s*\d{4}$/, '');
+
+      // Show title once, keyword as subtitle (only if different from title)
+      const title = escapeHtml(e.title || e.keyword || 'Untitled');
+      const keyword = e.keyword || '';
+      const showKeyword = keyword && keyword.toLowerCase() !== (e.title || '').toLowerCase();
+
+      return `
       <button class="history-item" data-id="${e.id}">
-        <div class="history-item-title">${escapeHtml(e.title || e.keyword)}</div>
-        <div class="history-item-keyword">${escapeHtml(e.keyword)}</div>
-        <div class="history-item-meta">
-          <span>${e.date}</span>
-          <span class="history-dot">·</span>
-          <span>${(e.wordCount || 0).toLocaleString()} words</span>
+        <div class="hi-title">${title}</div>
+        ${showKeyword ? `<div class="hi-keyword">${escapeHtml(keyword)}</div>` : ''}
+        <div class="hi-meta">
+          <span>${dateText}</span>
+          <span class="hi-wc-pill">${wcText}</span>
         </div>
       </button>
-    `).join('');
+    `;
+    }).join('');
   }
 
   function loadHistoryEntry(id) {
     const entry = getHistory().find(e => e.id === id);
     if (!entry) return;
-    for (const [key, content] of Object.entries(entry.rawContent)) {
-      rawContent[key] = content;
+
+    // Reset output first to clear stale state
+    resetOutput();
+
+    // Determine content source: prefer rawContent, fallback to re-parsing fullText
+    let contentSource = entry.rawContent;
+    if (!contentSource || (!contentSource['article'] && !contentSource['seo-brief'] && !contentSource['outline'])) {
+      // Old history entries may only have fullText — re-parse it
+      if (entry.fullText) {
+        contentSource = parseBlocks(entry.fullText);
+      } else {
+        contentSource = {};
+      }
+    }
+
+    for (const [key, content] of Object.entries(contentSource)) {
       if (!content) continue;
-      if (key === 'seo-meta') contentMap[key].innerHTML = renderSeoMeta(content);
-      else if (key === 'image-prompt') contentMap[key].innerHTML = renderImagePrompt(content);
-      else contentMap[key].innerHTML = renderMarkdown(content);
+      // Sanitize article content to remove any leaked block markers
+      const cleanContent = (key === 'article' || key === 'seo-brief' || key === 'outline' || key === 'image-prompt')
+        ? sanitizeArticleContent(content)
+        : content;
+      rawContent[key] = cleanContent;
+      if (key === 'seo-meta') contentMap[key].innerHTML = renderSeoMeta(cleanContent);
+      else if (key === 'image-prompt') contentMap[key].innerHTML = renderImagePrompt(cleanContent);
+      else contentMap[key].innerHTML = renderMarkdown(cleanContent);
       contentMap[key].classList.remove('streaming-cursor');
       const btn = tabsNav.querySelector(`[data-tab="${key}"]`);
       if (btn) btn.classList.add('has-content');
     }
-    if (rawContent['article']) { updateWordCount(rawContent['article']); computeQualityScore(rawContent['article']); attachRewriteButtons(); }
+
+    if (rawContent['article']) {
+      updateWordCount(rawContent['article']);
+      computeQualityScore(rawContent['article']);
+      attachRewriteButtons();
+      // Set document title from article
+      const titleMatch = rawContent['article'].match(/^#\s+(.+)/m);
+      if (titleMatch) {
+        const title = titleMatch[1].replace(/\*\*/g, '').trim();
+        window.currentState.articleTitle = title;
+        document.title = `${title} — Inkraft`;
+      }
+    }
     if (rawContent['seo-meta']) initSeoEditableFields();
+
+    // Restore keyword in input
+    if (entry.keyword) keywordInput.value = entry.keyword;
+
+    // Show regen bar since we have content
+    const regenBar = document.getElementById('regen-bar');
+    const hasContent = rawContent['article'] || rawContent['seo-brief'] || rawContent['outline'];
+    if (regenBar && hasContent) regenBar.classList.remove('hidden');
+
     outputSection.classList.remove('hidden');
     exampleChips.classList.add('hidden');
     newArticleBtn.classList.remove('hidden');
     errorSection.classList.add('hidden');
     loadingSection.classList.add('hidden');
     if (rawContent['article']) switchTab('article');
+    else if (rawContent['seo-brief']) switchTab('seo-brief');
     closeSidebar();
   }
 
