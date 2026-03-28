@@ -22,7 +22,7 @@ function getModel(userApiKey) {
   });
 }
 
-function buildUserPrompt({ keyword, audience, tone, contentType, wordCount, imageStyle }) {
+function buildUserPrompt({ keyword, audience, tone, contentType, wordCount, imageStyle, approvedAnalysis, approvedOutline }) {
   if (!keyword?.trim()) throw new Error('Keyword is required.');
   let prompt = keyword.trim();
   const parts = [];
@@ -31,6 +31,11 @@ function buildUserPrompt({ keyword, audience, tone, contentType, wordCount, imag
   if (contentType?.trim()) parts.push(`type: ${contentType.trim()}`);
   if (wordCount?.trim()) parts.push(`word count: ${wordCount.trim()}`);
   if (parts.length > 0) prompt += ' | ' + parts.join(' | ');
+  
+  if (approvedAnalysis || approvedOutline) {
+     prompt += `\n\n=== APPROVED CONTENT BRIEF (COMPETITOR ANALYSIS & STRATEGY) ===\n${approvedAnalysis || 'None provided.'}\n\n=== STRICT OUTLINE TO FOLLOW ===\n${approvedOutline || 'None provided.'}\n\nCRITICAL STRATEGY INSTRUCTION: You MUST strictly write the article based on the provided OUTLINE above. Do not hallucinate headings that are not in the approved outline. Use the insights from the Competitor Analysis to ensure our content is vastly superior in depth and quality to the competition.`;
+  }
+
   const style = imageStyle?.trim() || 'photorealistic';
   prompt += `\n\nimageStyle: ${style}\nGenerate the featured image prompt in ${style.toUpperCase().replace('-', ' ')} style only.`;
   return prompt;

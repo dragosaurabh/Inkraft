@@ -567,7 +567,7 @@
     appendUserSettings(body);
     
     lastRequestBody = body;
-    startGeneration(body);
+    startResearch(body);
   });
 
   // Helper to attach user settings to outgoing requests
@@ -585,6 +585,137 @@
       if (!bodyObj.audience && saved.audience) bodyObj.audience = saved.audience;
     } catch(e) {}
     return bodyObj;
+  }
+
+  // ── Autonomous Research ─────────────────────────────────────────
+  async function startResearch(body) {
+    isGenerating = true;
+    saveSettings(body);
+    
+    window.currentState = {
+      keyword: body.keyword || '',
+      tone: body.tone || '',
+      contentType: body.contentType || '',
+      wordCount: body.wordCount || '',
+      audience: body.audience || '',
+      imageStyle: body.imageStyle || 'photorealistic',
+      articleTitle: '',
+      articleExcerpt: ''
+    };
+    
+    resetOutput();
+    showLoading();
+
+    const briefSection = document.getElementById('brief-section');
+    if (briefSection) briefSection.classList.add('hidden');
+    document.getElementById('brief-analysis-content').innerHTML = '';
+    document.getElementById('brief-outline-content').innerHTML = '';
+
+    try {
+      const response = await fetch('/api/research', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ error: 'Server error' }));
+        throw new Error(err.error || `HTTP ${response.status}`);
+      }
+      await readResearchStream(response);
+    } catch (err) {
+      showError(err.message || 'Something went wrong during research. Check your API key and try again.');
+      isGenerating = false;
+    }
+  }
+
+  function updateLoadingStatus(msg) {
+     if (loadingStatusMobile) loadingStatusMobile.textContent = msg;
+     const stepLabelsArray = Array.from(loaderSteps.querySelectorAll('.step-label'));
+     if (stepLabelsArray.length > 0) stepLabelsArray[0].textContent = msg; 
+  }
+
+  async function readResearchStream(response) {
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let fullText = '';
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+
+      for (const line of lines) {
+        if (line.startsWith('event: error')) continue;
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          if (data === '[DONE]') { finishResearch(fullText); return; }
+          try {
+             const parsed = JSON.parse(data);
+             if (parsed.error) { showError(parsed.error); return; }
+             if (parsed.type === 'status') {
+                updateLoadingStatus(parsed.message);
+                continue;
+             }
+             if (parsed.type === 'stream') {
+                fullText += parsed.text.replace(/\\n/g, '\n');
+             }
+          } catch(e) {}
+        }
+      }
+    }
+    if (fullText) finishResearch(fullText);
+  }
+
+  function finishResearch(fullText) {
+    isGenerating = false;
+    hideLoading();
+    
+    const analysisMatch = fullText.match(/%%ANALYSIS_START%%([\s\S]*?)%%ANALYSIS_END%%/);
+    const outlineMatch = fullText.match(/%%OUTLINE_START%%([\s\S]*?)%%OUTLINE_END%%/);
+    
+    const analysisText = analysisMatch ? analysisMatch[1].trim() : "Analysis failed to parse properly. Output:\\n\\n" + fullText;
+    const outlineText = outlineMatch ? outlineMatch[1].trim() : fullText;
+
+    document.getElementById('brief-analysis-content').innerHTML = renderMarkdown(analysisText);
+    document.getElementById('brief-outline-content').innerHTML = renderMarkdown(outlineText);
+    
+    const briefSection = document.getElementById('brief-section');
+    if (briefSection) {
+      briefSection.classList.remove('hidden');
+      briefSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  // Brief Approval Event Listeners
+  const approveBtn = document.getElementById('approve-btn');
+  if (approveBtn) {
+    approveBtn.addEventListener('click', () => {
+       const outlineHtml = document.getElementById('brief-outline-content').innerHTML;
+       const analysisHtml = document.getElementById('brief-analysis-content').innerHTML;
+       
+       const temp = document.createElement('div');
+       temp.innerHTML = outlineHtml;
+       const plainOutline = temp.innerText || temp.textContent;
+       
+       temp.innerHTML = analysisHtml;
+       const plainAnalysis = temp.innerText || temp.textContent;
+
+       document.getElementById('brief-section').classList.add('hidden');
+       
+       const body = lastRequestBody;
+       body.approvedAnalysis = plainAnalysis;
+       body.approvedOutline = plainOutline;
+       
+       startGeneration(body);
+    });
+  }
+
+  const discardBtn = document.getElementById('discard-brief-btn');
+  if (discardBtn) {
+    discardBtn.addEventListener('click', () => {
+       document.getElementById('brief-section').classList.add('hidden');
+       inputSection.classList.remove('hidden');
+       exampleChips.classList.remove('hidden');
+    });
   }
 
   // ── Start generation ────────────────────────────────────────────
