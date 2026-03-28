@@ -25,7 +25,22 @@ const systemPrompt = rawSystemPrompt + `\n\n---\n\n## YEAR CONTEXT\n\nThe curren
 
 // ── Middleware ───────────────────────────────────────────────────────
 app.use(express.json());
-app.use(express.static(join(__dirname, 'public')));
+app.use(express.static(join(__dirname, 'public'), {
+  etag: true,
+  lastModified: true,
+  setHeaders: (res, filePath) => {
+    // HTML: never cache, always fetch fresh
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+    // CSS/JS: always revalidate with server (uses ETag for efficiency)
+    else if (filePath.endsWith('.css') || filePath.endsWith('.js')) {
+      res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+    }
+  }
+}));
 
 // ── Gemini client setup ─────────────────────────────────────────────
 function getModel() {

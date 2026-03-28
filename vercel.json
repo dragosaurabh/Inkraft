@@ -5,6 +5,28 @@
       "maxDuration": 300
     }
   },
+  "headers": [
+    {
+      "source": "/public/(.*).html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Pragma", "value": "no-cache" },
+        { "key": "Expires", "value": "0" }
+      ]
+    },
+    {
+      "source": "/public/(.*).css",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/public/(.*).js",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
+      ]
+    }
+  ],
   "routes": [
     {
       "src": "/api/(.*)",
