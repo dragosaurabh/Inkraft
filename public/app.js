@@ -406,8 +406,8 @@
     const boxes = document.querySelectorAll('#image-prompt-content .prompt-box');
     const parts = [];
     boxes.forEach(box => {
-      const title = box.querySelector('.prompt-box-header')?.textContent?.replace('Copy', '').trim() || '';
-      const body = box.querySelector('.prompt-box-body')?.textContent?.trim() || '';
+      const title = box.querySelector('.prompt-header')?.textContent?.replace('Copy', '').trim() || '';
+      const body = box.querySelector('.prompt-body')?.textContent?.trim() || '';
       if (title && body) parts.push(`━━━ ${title} ━━━\n${body}`);
     });
     const text = parts.join('\n\n');
@@ -1092,6 +1092,9 @@
   }
 
   function renderSeoMeta(md) {
+    // Toggle empty state
+    const emptyState = document.getElementById('seo-meta-empty');
+
     const fieldsData = [
       { key: 'SEO_TITLE', label: 'SEO Title', min: 50, max: 60 },
       { key: 'META_DESC', label: 'Meta Description', min: 150, max: 160 },
@@ -1110,7 +1113,12 @@
       if (val) fields.push({ ...f, value: val.replace(/\*\*/g, '') });
     }
 
-    if (fields.length === 0) return renderMarkdown(md);
+    if (fields.length === 0) {
+      if (emptyState) emptyState.classList.remove('hidden');
+      return '';
+    }
+
+    if (emptyState) emptyState.classList.add('hidden');
 
     return fields.map(f => {
       const ci = getCharRange(f.label);
@@ -1263,12 +1271,14 @@
     }
     if (current) sections.push(current);
 
-    if (sections.length === 0) return `<div class="prompt-box"><div class="prompt-box-header">🎨 IMAGE PROMPT<button class="copy-btn prompt-copy" data-value="${escapeAttr(md)}">Copy</button></div><div class="prompt-box-body">${escapeHtml(md)}</div></div>`;
+    if (sections.length === 0) return `<div class="prompt-box"><div class="prompt-header">🎨 IMAGE PROMPT<button class="copy-btn prompt-copy" data-value="${escapeAttr(md)}">Copy</button></div><div class="prompt-body">${escapeHtml(md)}</div></div>`;
 
     return sections.map(s => {
       const text = s.content.join('\n').replace(/^[━─\-=]{3,}\s*/gm, '').trim();
       const copyHtml = s.key !== 'tip' ? `<button class="copy-btn-small prompt-copy" data-value="${escapeAttr(text)}">Copy</button>` : '';
-      return `<div class="prompt-box prompt-box-${s.key}"><div class="prompt-box-header"><span>${s.emoji} ${escapeHtml(s.title)}</span>${copyHtml}</div><div class="prompt-box-body">${escapeHtml(text)}</div></div>`;
+      // Section label (e.g., "IMAGE PROMPT · PHOTOREALISTIC")
+      const sectionLabel = s.key === 'general' ? '<div class="prompt-section-label">IMAGE PROMPT</div>' : '';
+      return `${sectionLabel}<div class="prompt-box prompt-box-${s.key}"><div class="prompt-header"><span class="prompt-tool-name">${s.emoji} ${escapeHtml(s.title)}</span>${copyHtml}</div><div class="prompt-body">${escapeHtml(text)}</div></div>`;
     }).join('');
   }
 
@@ -1525,6 +1535,9 @@
     // Show empty state in image prompt
     const emptyState = document.getElementById('image-prompt-empty');
     if (emptyState) emptyState.classList.remove('hidden');
+    // Show empty state in SEO metadata
+    const seoEmptyState = document.getElementById('seo-meta-empty');
+    if (seoEmptyState) seoEmptyState.classList.remove('hidden');
   }
 
   function showLoading() {
