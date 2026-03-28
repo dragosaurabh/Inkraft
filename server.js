@@ -5,6 +5,10 @@ import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
+// Import our modular handlers
+import researchHandler from './api/research.js';
+import generateHandler from './api/generate.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -158,53 +162,9 @@ function parseImagePrompts(block5Text) {
   return sections;
 }
 
-// ── POST /api/generate — streaming SSE endpoint ─────────────────────
-app.post('/api/generate', async (req, res) => {
-  let userPrompt;
-  try {
-    userPrompt = buildUserPrompt(req.body);
-  } catch (err) {
-    return res.status(400).json({ error: err.message });
-  }
-
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.setHeader('X-Accel-Buffering', 'no');
-  res.flushHeaders();
-
-  try {
-    const model = getModel();
-
-    const result = await model.generateContentStream({
-      contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-      generationConfig: {
-        temperature: 0.85,
-        topP: 0.95,
-        topK: 40,
-        maxOutputTokens: 65536,
-      },
-    });
-
-    let fullText = '';
-    for await (const chunk of result.stream) {
-      const text = chunk.text();
-      if (text) {
-        fullText += text;
-        const encoded = text.replace(/\n/g, '\\n');
-        res.write(`data: ${encoded}\n\n`);
-      }
-    }
-
-    res.write('data: [DONE]\n\n');
-    res.end();
-  } catch (err) {
-    console.error('Gemini API error:', err);
-    const errorMsg = err.message || 'An error occurred while generating the article.';
-    res.write(`event: error\ndata: ${JSON.stringify({ error: errorMsg })}\n\n`);
-    res.end();
-  }
-});
+// ── Modular API Endpoints ───────────────────────────────────────────
+app.post('/api/research', researchHandler);
+app.post('/api/generate', generateHandler);
 
 // ── POST /api/rewrite-section — rewrite a single H2 section ────────
 app.post('/api/rewrite-section', async (req, res) => {
