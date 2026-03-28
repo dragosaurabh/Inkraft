@@ -635,6 +635,7 @@
     const decoder = new TextDecoder();
     let buffer = '';
     let fullText = '';
+    let briefShown = false;
     
     while (true) {
       const { done, value } = await reader.read();
@@ -657,6 +658,43 @@
              }
              if (parsed.type === 'stream') {
                 fullText += parsed.text.replace(/\\n/g, '\n');
+                
+                // Show brief section as soon as we start getting analysis
+                if (!briefShown && fullText.includes('%%ANALYSIS_START%%')) {
+                   briefShown = true;
+                   hideLoading();
+                   inputSection.classList.add('hidden');
+                   exampleChips.classList.add('hidden');
+                   const briefSection = document.getElementById('brief-section');
+                   if (briefSection) {
+                     briefSection.classList.remove('hidden');
+                     briefSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                   }
+                }
+                
+                if (briefShown) {
+                   const analysisMatch = fullText.match(/%%ANALYSIS_START%%([\s\S]*?)%%ANALYSIS_END%%/);
+                   const outlineMatch = fullText.match(/%%OUTLINE_START%%([\s\S]*?)%%OUTLINE_END%%/);
+                   
+                   if (analysisMatch) {
+                      document.getElementById('brief-analysis-content').innerHTML = renderMarkdown(analysisMatch[1].trim());
+                   } else {
+                      const partialAnalysis = fullText.match(/%%ANALYSIS_START%%([\s\S]*)/);
+                      if (partialAnalysis) {
+                         document.getElementById('brief-analysis-content').innerHTML = renderMarkdown(partialAnalysis[1].trim()) + '<span class="streaming-cursor"></span>';
+                      }
+                   }
+                   
+                   if (outlineMatch) {
+                      document.getElementById('brief-outline-content').innerHTML = renderMarkdown(outlineMatch[1].trim());
+                   } else {
+                      const partialOutline = fullText.match(/%%OUTLINE_START%%([\s\S]*)/);
+                      if (partialOutline) {
+                         document.getElementById('brief-outline-content').innerHTML = renderMarkdown(partialOutline[1].trim()) + '<span class="streaming-cursor"></span>';
+                      }
+                   }
+                }
+
              }
           } catch(e) {}
         }
@@ -1521,9 +1559,25 @@
   function getHistory() { try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch { return []; } }
 
   function saveToHistory(fullText) {
-    const keyword = keywordInput.value.trim();
-    const wc = countWords(rawContent['article'] || '');
-    const entry = { id: Date.now(), keyword, title: window.currentState.articleTitle || keyword, date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), wordCount: wc, rawContent: { ...rawContent }, fullText };
+    const keyword = keywordInput.value.trim() || window.currentState?.keyword || '';
+    const title = window.currentState?.articleTitle || keyword || 'Untitled';
+    let wc = 0;
+    if (rawContent && rawContent['article']) {
+      wc = countWords(rawContent['article']);
+    }
+
+    // Capture the current fully-parsed rawContent
+    const capturedContent = { ...rawContent };
+
+    const entry = { 
+      id: Date.now(), 
+      keyword, 
+      title, 
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), 
+      wordCount: wc, 
+      rawContent: capturedContent, 
+      fullText 
+    };
     const history = getHistory();
     history.unshift(entry);
     if (history.length > MAX_HISTORY) history.pop();
@@ -1625,11 +1679,15 @@
     const hasContent = rawContent['article'] || rawContent['seo-brief'] || rawContent['outline'];
     if (regenBar && hasContent) regenBar.classList.remove('hidden');
 
+    inputSection.classList.add('hidden'); // Fix BUG: Hide the generator prompt
+    const briefSection = document.getElementById('brief-section');
+    if (briefSection) briefSection.classList.add('hidden');
     outputSection.classList.remove('hidden');
     exampleChips.classList.add('hidden');
     newArticleBtn.classList.remove('hidden');
     errorSection.classList.add('hidden');
     loadingSection.classList.add('hidden');
+    
     if (rawContent['article']) switchTab('article');
     else if (rawContent['seo-brief']) switchTab('seo-brief');
     closeSidebar();

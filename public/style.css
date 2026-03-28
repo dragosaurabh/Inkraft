@@ -797,19 +797,49 @@ select option { background: var(--bg-card); color: var(--text-primary); }
   display: flex; align-items: center; gap: 8px; font-size: 11px;
 }
 .copy-btn-small {
-  background: var(--bg-hover); border: 1px solid var(--border); color: var(--text-secondary);
-  padding: 2px 8px; border-radius: var(--radius-sm); font-size: 11px; cursor: pointer; transition: all 0.2s;
-  font-family: inherit; font-weight: 500;
+  background: var(--bg-card); 
+  border: 1px solid var(--border); 
+  color: var(--text-secondary);
+  padding: 4px 10px; 
+  border-radius: 12px; 
+  font-size: 11px; 
+  cursor: pointer; 
+  transition: all 0.2s ease;
+  font-family: inherit; 
+  font-weight: 600;
+  display: inline-flex; 
+  align-items: center; 
+  gap: 4px;
 }
-.copy-btn-small:hover { background: var(--border); color: var(--text-primary); }
+.copy-btn-small::before {
+  content: "⎘"; /* Nice copy icon symbol */
+  font-size: 12px;
+}
+.copy-btn-small:hover { 
+  background: var(--bg-hover); 
+  color: var(--text-primary); 
+  border-color: var(--accent); 
+  transform: translateY(-1px);
+}
+.copy-btn-small:active {
+  transform: translateY(0);
+}
 
 /* Outline tab heading styles */
-#outline-content h1 { font-size: 22px; font-weight: 800; margin-bottom: 12px; color: var(--text-primary); }
-#outline-content h2 { font-size: 18px; font-weight: 700; margin-top: 20px; margin-bottom: 8px; color: var(--text-primary); border-left: 3px solid var(--accent); padding-left: 12px; }
-#outline-content h3 { font-size: 15px; font-weight: 600; margin-top: 12px; margin-bottom: 6px; color: var(--text-secondary); padding-left: 16px; }
-#outline-content p { font-size: 14px; line-height: 1.6; }
-#outline-content ul, #outline-content ol { padding-left: 32px; }
-#outline-content li { font-size: 14px; margin-bottom: 4px; }
+#outline-content {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+#outline-content h1 { font-size: 22px; font-weight: 800; margin-bottom: 24px; color: var(--text-primary); text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 16px; }
+#outline-content h2 { font-size: 17px; font-weight: 700; margin-top: 32px; margin-bottom: 12px; color: var(--text-primary); border-left: 4px solid var(--accent); padding-left: 14px; background: rgba(107, 78, 255, 0.05); padding: 8px 14px; border-radius: 0 6px 6px 0; }
+#outline-content h3 { font-size: 15px; font-weight: 600; margin-top: 16px; margin-bottom: 8px; color: var(--text-secondary); padding-left: 20px; display: flex; align-items: center; gap: 8px; }
+#outline-content h3::before { content: "•"; color: var(--accent); font-size: 18px; }
+#outline-content p { font-size: 14px; line-height: 1.6; margin-bottom: 16px; color: var(--text-secondary); }
+#outline-content ul, #outline-content ol { padding-left: 36px; margin-bottom: 16px; }
+#outline-content li { font-size: 14px; margin-bottom: 6px; color: var(--text-secondary); }
 
 /* ── 20. IMAGE PROMPT BOXES ──────────────────────────────────── */
 .image-prompt-body { max-width: 680px; margin: 0 auto; }
